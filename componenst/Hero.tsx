@@ -1,8 +1,8 @@
 import { ImageWithFallback } from './figma/image';
+import igrejaImage from '../Styles/img/igreja.jpeg';
 
 export function Hero() {
-  // URL de uma igreja como placeholder - substitua pela imagem real da paróquia
-  const churchImage = 'https://images.unsplash.com/photo-1621610212492-210f948fa466?w=1920&q=80';
+  const churchImage = igrejaImage;
 
   return (
     <section id="inicio" className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -11,7 +11,7 @@ export function Hero() {
         <ImageWithFallback
           src={churchImage}
           alt="Igreja Paróquia Santo André"
-          className="w-full h-full object-cover scale-105"
+          className="w-full h-full object-cover object-[50%_80%] scale-100"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
 
