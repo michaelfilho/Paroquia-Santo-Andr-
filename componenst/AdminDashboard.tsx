@@ -202,6 +202,67 @@ const EventFormModal = ({
   </div>
 );
 
+interface InscriptionsModalProps {
+  event: Event | null;
+  inscriptions: any[];
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const InscriptionsModal = ({ event, inscriptions, isOpen, onClose }: InscriptionsModalProps) => {
+  if (!isOpen || !event) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-8 max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-amber-900">Inscritos Confirmados</h3>
+            <p className="text-gray-600 mt-1">{event.title}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div className="mb-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-lg font-semibold text-amber-900">
+            Total: <span className="text-amber-600">{inscriptions.length}</span> pessoas confirmadas
+          </p>
+        </div>
+
+        {inscriptions.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>Nenhuma inscrição confirmada ainda</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {inscriptions.map((inscription) => (
+              <div key={inscription.id} className="border border-gray-200 rounded-lg p-4 hover:border-amber-300 transition">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-900">{inscription.name}</h4>
+                    <div className="mt-2 space-y-1 text-sm text-gray-600">
+                      <p>📧 {inscription.email}</p>
+                      <p>📱 {inscription.phone}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                      ✓ Confirmado
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 interface ChapelFormModalProps {
   editingId: string | null;
   chapelForm: Chapel;
@@ -628,6 +689,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [showCleryForm, setShowCleryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
   const [showContentForm, setShowContentForm] = useState(false);
+  const [showInscriptionsModal, setShowInscriptionsModal] = useState(false);
+  const [selectedEventForInscriptions, setSelectedEventForInscriptions] = useState<Event | null>(null);
+  const [eventInscriptions, setEventInscriptions] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [_loading, setLoading] = useState(false);
 
@@ -827,7 +891,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (inscriptionsData && Array.isArray(inscriptionsData)) {
         const formatted = inscriptionsData.map((reg: any) => ({
           id: reg.id,
-          event: events.find(e => e.id === reg.eventId)?.title || 'Evento desconhecido',
+          event: (eventsData || []).find((e: Event) => e.id === reg.eventId)?.title || 'Evento desconhecido',
           name: reg.name,
           email: reg.email,
           phone: reg.phone || '',
@@ -893,6 +957,21 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     } catch (error) {
       console.error('Erro ao publicar evento:', error);
       alert('Erro ao publicar evento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenInscriptionsModal = async (event: Event) => {
+    try {
+      setSelectedEventForInscriptions(event);
+      setShowInscriptionsModal(true);
+      setLoading(true);
+      const inscriptions = await inscriptionsAPI.getConfirmedByEvent(event.id);
+      setEventInscriptions(inscriptions || []);
+    } catch (error) {
+      console.error('Erro ao carregar inscrições:', error);
+      alert('Erro ao carregar inscrições confirmadas');
     } finally {
       setLoading(false);
     }
@@ -1472,6 +1551,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                 </div>
                                 <div className="flex space-x-2 ml-4">
                                   <button
+                                    onClick={() => handleOpenInscriptionsModal(event)}
+                                    className="p-3 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-all"
+                                    title="Ver inscritos confirmados"
+                                  >
+                                    <Users className="w-5 h-5" />
+                                  </button>
+                                  <button
                                     onClick={() => handleEditEvent(event)}
                                     className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
                                   >
@@ -1788,6 +1874,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           onKeyChange={handleContentKeyChange}
           onTitleChange={handleContentTitleChange}
           onContentChange={handleContentContentChange}
+        />
+      )}
+      {showInscriptionsModal && (
+        <InscriptionsModal
+          event={selectedEventForInscriptions}
+          inscriptions={eventInscriptions}
+          isOpen={showInscriptionsModal}
+          onClose={() => { setShowInscriptionsModal(false); setSelectedEventForInscriptions(null); setEventInscriptions([]); }}
         />
       )}
     </section>

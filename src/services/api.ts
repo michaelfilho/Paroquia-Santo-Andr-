@@ -390,6 +390,18 @@ export const inscriptionsAPI = {
     return response.json();
   },
 
+  getConfirmedByEvent: async (eventId: string) => {
+    const response = await fetch(`${API_BASE_URL}/inscriptions/event/${eventId}/confirmadas`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar inscrições confirmadas');
+    }
+    
+    return response.json();
+  },
+
   create: async (inscriptionData: any) => {
     const response = await fetch(`${API_BASE_URL}/inscriptions`, {
       method: 'POST',

@@ -29,6 +29,22 @@ router.get('/event/:eventId', async (req, res) => {
   }
 });
 
+// GET confirmed inscriptions by event (for admin)
+router.get('/event/:eventId/confirmadas', async (req, res) => {
+  try {
+    const inscriptions = await Inscription.findAll({
+      where: { 
+        eventId: req.params.eventId,
+        status: 'Confirmado'
+      },
+      order: [['createdAt', 'DESC']],
+    });
+    res.json(inscriptions);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar inscrições confirmadas', error: error.message });
+  }
+});
+
 // GET inscription by ID
 router.get('/:id', async (req, res) => {
   try {

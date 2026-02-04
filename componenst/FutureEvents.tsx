@@ -264,9 +264,20 @@ export function FutureEvents() {
                     </div>
                     {event.acceptsRegistration && event.maxParticipants && (
                       <div className="mt-4 pt-4 border-t border-amber-200">
-                        <p className="text-sm font-semibold text-amber-900">
-                          Inscritos: <span className="text-lg text-amber-700">{event.confirmedInscriptions || 0}/{event.maxParticipants}</span>
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-sm font-semibold text-amber-900">
+                            Inscritos: <span className="text-lg text-amber-700">{event.confirmedInscriptions || 0}/{event.maxParticipants}</span>
+                          </p>
+                          <div className="w-full bg-amber-100 rounded-full h-2">
+                            <div 
+                              className="bg-amber-600 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${Math.min(((event.confirmedInscriptions || 0) / event.maxParticipants) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-600">
+                            <span className="font-semibold text-green-600">{event.maxParticipants - (event.confirmedInscriptions || 0)} vagas disponíveis</span>
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

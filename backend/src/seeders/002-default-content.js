@@ -305,10 +305,9 @@ const seedDefaultContent = async () => {
   ]);
 
   if (adminCount === 0) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
     await Admin.create({
       username: 'admin',
-      password: hashedPassword,
+      password: 'admin123',
     });
   }
 

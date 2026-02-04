@@ -286,12 +286,17 @@ export function Inscricoes() {
                   Telefone *
                 </label>
                 <input
-                  type="tel"
+                  type="number"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setFormData({ ...formData, phone: value });
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-600 focus:outline-none transition-colors"
-                  placeholder="(14) 99999-9999"
+                  placeholder="14999999999"
+                  maxLength={11}
+                  min="0"
                 />
               </div>
 
