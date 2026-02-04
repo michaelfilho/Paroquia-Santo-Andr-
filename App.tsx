@@ -3,6 +3,7 @@ import { Header } from './componenst/Header';
 import { Hero } from './componenst/Hero';
 import { About } from './componenst/About';
 import { Clergy } from './componenst/Clergy';
+import { Guides } from './componenst/Guides';
 import { Map } from './componenst/Map';
 import { PastEvents } from './componenst/PastEvents';
 import { FutureEvents } from './componenst/FutureEvents';
@@ -12,7 +13,7 @@ import { Inscricoes } from './componenst/Inscrições';
 import { AdminLogin } from './componenst/adminLogin';
 import { AdminDashboard } from './componenst/AdminDashboard';
 
-type PageType = 'home' | 'inscricoes' | 'admin-login' | 'admin-dashboard';
+type PageType = 'home' | 'inscricoes' | 'guias' | 'admin-login' | 'admin-dashboard';
 
 export default function App() {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
@@ -22,6 +23,8 @@ export default function App() {
   const handleNavigate = (page: string) => {
     if (page === 'inscricoes') {
       setCurrentPage('inscricoes');
+    } else if (page === 'guias') {
+      setCurrentPage('guias');
     } else if (page === 'home') {
       setCurrentPage('home');
     }
@@ -58,6 +61,19 @@ export default function App() {
         <AdminDashboard onLogout={handleLogout} />
         <Footer />
       </>
+    );
+  }
+
+  // Render Guias Page
+  if (currentPage === 'guias') {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header onNavigate={handleNavigate} currentPage={currentPage} />
+        <div style={{ paddingTop: '80px' }}>
+          <Guides />
+        </div>
+        <Footer onAdminClick={handleAdminClick} />
+      </div>
     );
   }
 

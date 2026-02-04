@@ -76,30 +76,6 @@ export function About() {
             </div>
           </div>
         </div>
-
-        {/* Mission, Vision, Values */}
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-white rounded-2xl p-10 shadow-lg border border-amber-100">
-            <h4 className="text-2xl font-bold text-amber-900 mb-4">Missão</h4>
-            <p className="text-gray-600 leading-relaxed text-justify">
-              Evangelizar, celebrar a fé e servir a comunidade com amor, seguindo os ensinamentos de Cristo.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-10 shadow-lg border border-amber-100">
-            <h4 className="text-2xl font-bold text-amber-900 mb-4">Visão</h4>
-            <p className="text-gray-600 leading-relaxed text-justify">
-              Ser uma comunidade acolhedora onde todos encontram Cristo e crescem na fé e no amor fraterno.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-10 shadow-lg border border-amber-100">
-            <h4 className="text-2xl font-bold text-amber-900 mb-4">Valores</h4>
-            <p className="text-gray-600 leading-relaxed text-justify">
-              Fé, esperança, caridade, comunhão, serviço e compromisso com a justiça social.
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

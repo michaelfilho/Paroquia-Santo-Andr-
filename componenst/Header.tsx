@@ -57,6 +57,7 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
     { id: 'mapa', label: 'Mapa', type: 'scroll' },
     { id: 'eventos-realizados', label: 'Eventos Realizados', type: 'scroll' },
     { id: 'eventos-futuros', label: 'Programações', type: 'scroll' },
+    { id: 'guias', label: 'Guias', type: 'page' },
     { id: 'inscricoes', label: 'Inscrições', type: 'page' },
   ];
 

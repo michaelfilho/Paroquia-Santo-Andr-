@@ -70,6 +70,32 @@ export function Clergy() {
     },
   ];
 
+  const pope: ClergyMember[] = [
+    {
+      id: '6',
+      name: 'Papa Francisco',
+      role: 'Papa',
+      period: '2013 - Presente',
+      bio: 'Jorge Mario Bergoglio, Papa Francisco, eleito em 2013, é o 266º Papa da Igreja Católica Apostólica Romana. Primeiro Papa das Américas e primeiro Papa jesuíta, dedica-se à missão de renovação da Igreja e ao cuidado com os pobres e excluídos, seguindo as pegadas de São Francisco.',
+      imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+      current: true,
+    },
+  ];
+
+  const bishops: ClergyMember[] = [
+    {
+      id: '7',
+      name: 'Dom Cerineu Pivatto',
+      role: 'Bispo',
+      period: '2006 - Presente',
+      bio: 'Dom Cerineu Pivatto é o bispo responsável pela Diocese que abrange nossa Paróquia Santo André. Dedica-se ao pastoreio dos fiéis, à formação do clero e ao fortalecimento das comunidades paroquiais em sua jurisdição.',
+      email: 'bispo@diocese.org.br',
+      phone: '(14) 3232-2010',
+      imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+      current: true,
+    },
+  ];
+
   const ClergyCard = ({ member }: { member: ClergyMember }) => (
     <div className="group bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 border border-amber-100/50">
       <div className="relative h-80 overflow-hidden">
@@ -140,20 +166,34 @@ export function Clergy() {
 
         <div className="mb-24">
           <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
-            Párocos
+            Papa
           </h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {priests.map(priest => (
-              <ClergyCard key={priest.id} member={priest} />
+            {pope.map(member => (
+              <ClergyCard key={member.id} member={member} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-24">
+          <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
+            Bispo
+          </h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {bishops.map(bishop => (
+              <ClergyCard key={bishop.id} member={bishop} />
             ))}
           </div>
         </div>
 
         <div>
           <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
-            Vigários Paroquiais
+            Sacerdotes
           </h3>
-          <div className="grid md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {priests.map(priest => (
+              <ClergyCard key={priest.id} member={priest} />
+            ))}
             {vicars.map(vicar => (
               <ClergyCard key={vicar.id} member={vicar} />
             ))}
