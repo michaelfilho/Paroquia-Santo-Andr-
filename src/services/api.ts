@@ -512,4 +512,37 @@ export const contentAPI = {
   },
 };
 
+// Upload endpoints
+export const uploadAPI = {
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao fazer upload da imagem');
+      }
+
+      const data = await response.json();
+      
+      // Converter URL relativa em absoluta
+      if (data.imageUrl && data.imageUrl.startsWith('/')) {
+        data.imageUrl = `${API_BASE_URL.replace('/api', '')}${data.imageUrl}`;
+      }
+      
+      return data;
+    } catch (error) {
+      throw new Error(`Erro ao fazer upload: ${error instanceof Error ? error.message : 'Desconhecido'}`);
+    }
+  },
+};
+
 export { setAuthToken, clearAuthToken, getAuthHeaders };

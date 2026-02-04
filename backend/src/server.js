@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const sequelize = require('./config/sequelize');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
@@ -9,6 +10,7 @@ const clergyRoutes = require('./routes/clergy');
 const guideRoutes = require('./routes/guides');
 const inscriptionRoutes = require('./routes/inscriptions');
 const contentRoutes = require('./routes/content');
+const uploadRoutes = require('./routes/upload');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 
@@ -39,6 +41,24 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Log de debug para todas as requisições
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path}`);
+  next();
+});
+
+// Servir arquivos estáticos (imagens) com CORS habilitado
+app.use('/api/uploads', cors(corsOptions), (req, res, next) => {
+  console.log(`🖼️  Tentando acessar: ${req.path}`);
+  next();
+}, express.static(path.join(__dirname, '../../Styles/img'), {
+  setHeaders: (res, filepath) => {
+    console.log(`📤 Servindo arquivo: ${filepath}`);
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Backend funcionando perfeitamente!' });
@@ -46,6 +66,7 @@ app.get('/api/health', (req, res) => {
 
 // Public Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Public events endpoint
 app.get('/api/public/events', async (req, res) => {

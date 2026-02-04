@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Mail, Phone } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
 import { clergyAPI } from '../src/services/api';
-import currentPriestImage from '../Styles/img/WhatsApp Image 2026-02-03 at 10.39.15.jpeg';
 
 interface ClergyMember {
   id: string;
@@ -50,7 +49,7 @@ export function Clergy() {
       bio: 'Ordenado em 2010, Pe. João Carlos dedica-se à evangelização e ao fortalecimento da comunidade paroquial. Com formação em Teologia Pastoral, tem focado em renovar as pastorais e ampliar o alcance missionário da paróquia.',
       email: 'pe.joao@paroquiasantoandre.org.br',
       phone: '(14) 3234-5678',
-      imageUrl: currentPriestImage,
+      imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       current: true,
     },
     {

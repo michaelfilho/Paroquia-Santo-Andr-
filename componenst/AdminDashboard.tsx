@@ -20,6 +20,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI } from '../src/services/api';
+import { ImageUpload } from './ImageUpload';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -382,7 +383,12 @@ const ClergyFormModal = ({
   onImageChange,
   onCurrentChange,
   onPhoneChange,
-}: ClergyFormModalProps) => (
+}: ClergyFormModalProps) => {
+  const handleImageUpload = (url: string) => {
+    onImageChange(url);
+  };
+
+  return (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3">
     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
       <div className="flex items-center justify-between mb-4">
@@ -493,15 +499,19 @@ const ClergyFormModal = ({
           />
         </div>
         <div className="space-y-1">
-          <label htmlFor="clergy-image" className="text-sm font-medium text-amber-900">Imagem (URL)</label>
-          <input
-            id="clergy-image"
-            type="text"
-            placeholder="https://..."
-            value={clergyForm.imageUrl || ''}
-            onChange={(e) => onImageChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
+          <label htmlFor="clergy-image" className="text-sm font-medium text-amber-900">Imagem do Membro</label>
+          <div className="flex gap-2 items-start">
+            <div className="flex-1">
+              <input
+                id="clergy-image"
+                type="text"
+                placeholder="https://... ou selecione uma imagem acima"
+                value={clergyForm.imageUrl || ''}
+                onChange={(e) => onImageChange(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+              />
+            </div>
+          </div>
           {clergyForm.imageUrl && (
             <div className="mt-2 rounded-lg border border-amber-100 bg-amber-50/40 p-2">
               <p className="text-xs text-amber-800 mb-2">Pré-visualização</p>
@@ -517,6 +527,11 @@ const ClergyFormModal = ({
             </div>
           )}
         </div>
+        <ImageUpload 
+          onImageUrlChange={handleImageUpload}
+          currentImageUrl={clergyForm.imageUrl}
+          label="Ou faça upload de uma foto"
+        />
         <label className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -557,7 +572,8 @@ const ClergyFormModal = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 interface GuideFormModalProps {
   editingId: string | null;

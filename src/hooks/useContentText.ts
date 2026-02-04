@@ -1,8 +1,8 @@
-import { contentAPI } from '../src/services/api';
+import { contentAPI } from '../services/api';
 
 export const useContentText = async (key: string) => {
   try {
-    const response = await contentAPI.get(`/${key}`);
+    const response = await contentAPI.getByKey(key);
     return response;
   } catch (error) {
     console.error(`Erro ao buscar conteúdo ${key}:`, error);
