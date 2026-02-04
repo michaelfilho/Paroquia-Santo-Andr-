@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Info, ChevronDown } from 'lucide-react';
+import { eventsAPI } from '../src/services/api';
 
 interface FutureEvent {
-  id: string;
+  id: string | number;
   title: string;
   date: string;
   month: string;
@@ -14,8 +15,53 @@ interface FutureEvent {
 
 export function FutureEvents() {
   const [openMonth, setOpenMonth] = useState<string | null>(null);
+  const [events, setEvents] = useState<FutureEvent[]>([]);
 
-  const events: FutureEvent[] = [
+  useEffect(() => {
+    loadFutureEvents();
+  }, []);
+
+  const loadFutureEvents = async () => {
+    try {
+      const data = await eventsAPI.getAll();
+      
+      if (data && data.length > 0) {
+        // Filtrar apenas eventos futuros
+        const now = new Date();
+        const futureEvents = data
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            return eventDate >= now;
+          })
+          .map((event: any) => {
+            const eventDate = new Date(event.date);
+            const monthYear = eventDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            });
+            
+            return {
+              ...event,
+              month: monthYear.charAt(0).toUpperCase() + monthYear.slice(1),
+              date: formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1),
+              category: event.category || 'evento'
+            };
+          })
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        setEvents(futureEvents);
+      } else {
+        setEvents(getDefaultEvents());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar eventos futuros:', error);
+      setEvents(getDefaultEvents());
+    }
+  };
+
+  const getDefaultEvents = (): FutureEvent[] => [
     {
       id: '1',
       title: 'Missa Dominical',

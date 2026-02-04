@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Calendar,
   MapPin,
@@ -6,9 +6,10 @@ import {
   Image as ImageIcon,
   ChevronDown
 } from 'lucide-react';
+import { eventsAPI } from '../src/services/api';
 
 interface Event {
-  id: string;
+  id: string | number;
   title: string;
   date: string;
   location: string;
@@ -18,13 +19,57 @@ interface Event {
 }
 
 interface PastEventsProps {
-  onViewPhotos: (eventId: string) => void;
+  onViewPhotos: (eventId: string | number) => void;
 }
 
 export function PastEvents({ onViewPhotos }: PastEventsProps) {
   const [openYear, setOpenYear] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
 
-  const events: Event[] = [
+  useEffect(() => {
+    loadPastEvents();
+  }, []);
+
+  const loadPastEvents = async () => {
+    try {
+      const data = await eventsAPI.getAll();
+      
+      if (data && data.length > 0) {
+        // Filtrar apenas eventos passados
+        const now = new Date();
+        const pastEvents = data
+          .filter((event: any) => {
+            const eventDate = new Date(event.date);
+            return eventDate < now;
+          })
+          .map((event: any) => {
+            const eventDate = new Date(event.date);
+            const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            });
+            
+            return {
+              ...event,
+              date: formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1),
+              attendees: event.attendees || 0,
+              hasPhotos: event.hasPhotos || false
+            };
+          })
+          .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        setEvents(pastEvents);
+      } else {
+        setEvents(getDefaultEvents());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar eventos passados:', error);
+      setEvents(getDefaultEvents());
+    }
+  };
+
+  const getDefaultEvents = (): Event[] => [
     {
       id: '1',
       title: 'Festa de Santo André 2025',

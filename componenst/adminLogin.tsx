@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Lock, User, Eye, EyeOff } from "lucide-react";
+import { authAPI, setAuthToken } from "../src/services/api";
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -14,16 +15,22 @@ export function AdminLogin({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    if (username === "padre" && password === "123") {
+    try {
+      const response = await authAPI.login(username, password);
+      setAuthToken(response.token);
       onLogin();
-    } else {
+    } catch (err) {
       setError("Usuário ou senha incorretos");
       setTimeout(() => setError(""), 3000);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,9 +115,10 @@ export function AdminLogin({
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:cursor-not-allowed"
             >
-              Entrar
+              {isLoading ? "Entrando..." : "Entrar"}
             </button>
 
             <button

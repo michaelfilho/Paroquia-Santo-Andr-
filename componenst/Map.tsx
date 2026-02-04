@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { MapPin, User, Phone, Mail } from 'lucide-react';
+import { chapelsAPI } from '../src/services/api';
 
 interface Chapel {
-  id: string;
+  id: string | number;
   name: string;
   neighborhood: string;
   coordinator: string;
@@ -11,7 +13,47 @@ interface Chapel {
 }
 
 export function Map() {
-  const chapels: Chapel[] = [
+  const [chapels, setChapels] = useState<Chapel[]>([]);
+
+  useEffect(() => {
+    loadChapels();
+  }, []);
+
+  const loadChapels = async () => {
+    try {
+      const data = await chapelsAPI.getAll();
+      
+      if (data && data.length > 0) {
+        // Mapear dados da API e garantir que position seja objeto
+        const chapelsWithPosition = data.map((chapel: any, index: number) => ({
+          ...chapel,
+          position: typeof chapel.position === 'string' 
+            ? JSON.parse(chapel.position) 
+            : chapel.position || getDefaultPosition(index)
+        }));
+        setChapels(chapelsWithPosition);
+      } else {
+        // Fallback para dados padrão se API falhar ou retornar vazio
+        setChapels(getDefaultChapels());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar capelas:', error);
+      setChapels(getDefaultChapels());
+    }
+  };
+
+  const getDefaultPosition = (index: number) => {
+    const positions = [
+      { x: 50, y: 45 },
+      { x: 30, y: 30 },
+      { x: 70, y: 35 },
+      { x: 40, y: 65 },
+      { x: 65, y: 60 }
+    ];
+    return positions[index % positions.length];
+  };
+
+  const getDefaultChapels = (): Chapel[] => [
     {
       id: '1',
       name: 'Igreja Matriz Santo André',

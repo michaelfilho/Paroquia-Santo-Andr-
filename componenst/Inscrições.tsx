@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, X } from 'lucide-react';
+import { eventsAPI, inscriptionsAPI } from '../src/services/api';
 
 interface Event {
   id: string;
@@ -25,6 +26,8 @@ interface FormData {
 export function Inscricoes() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     cpf: '',
@@ -33,95 +36,79 @@ export function Inscricoes() {
     observations: '',
   });
 
-  const events: Event[] = [
-    {
-      id: '1',
-      title: 'Retiro de Quaresma',
-      date: '28 de Fevereiro - 2 de Março de 2026',
-      time: '18:00',
-      location: 'Casa de Retiros São Francisco',
-      description: 'Retiro espiritual de preparação para a Quaresma, com palestras, reflexões e momentos de oração.',
-      category: 'Retiro',
-      availableSpots: 15,
-      totalSpots: 50,
-      status: 'open',
-    },
-    {
-      id: '2',
-      title: 'Encontro de Casais',
-      date: '14-15 de Março de 2026',
-      time: '19:00',
-      location: 'Salão Paroquial',
-      description: 'Encontro especial para casais com palestras sobre família, comunicação e espiritualidade conjugal.',
-      category: 'Evento',
-      availableSpots: 8,
-      totalSpots: 30,
-      status: 'open',
-    },
-    {
-      id: '3',
-      title: 'Catequese Infantil - Turma 2026',
-      date: 'Início em Março de 2026',
-      time: '14:00',
-      location: 'Salas de Catequese',
-      description: 'Inscrições para a catequese infantil 2026. Aulas semanais para crianças de 7 a 10 anos.',
-      category: 'Catequese',
-      availableSpots: 25,
-      totalSpots: 40,
-      status: 'open',
-    },
-    {
-      id: '4',
-      title: 'Grupo de Jovens - Nova Turma',
-      date: 'Início em Fevereiro de 2026',
-      time: '19:30',
-      location: 'Salão Paroquial',
-      description: 'Inscrições para participar do grupo de jovens da paróquia. Encontros semanais com dinâmicas, música e reflexões.',
-      category: 'Pastoral',
-      availableSpots: 20,
-      totalSpots: 35,
-      status: 'open',
-    },
-    {
-      id: '5',
-      title: 'Páscoa 2026 - Vigília Pascal',
-      date: '5 de Abril de 2026',
-      time: '06:00',
-      location: 'Igreja Matriz',
-      description: 'Inscrição para participar do coral e das leituras durante a Vigília Pascal.',
-      category: 'Celebração',
-      availableSpots: 0,
-      totalSpots: 20,
-      status: 'closed',
-    },
-    {
-      id: '6',
-      title: 'Curso de Noivos - Abril 2026',
-      date: '19-20 de Abril de 2026',
-      time: '08:00',
-      location: 'Salão Paroquial',
-      description: 'Curso obrigatório para casais que desejam se casar na igreja. Inclui palestras sobre matrimônio e espiritualidade.',
-      category: 'Curso',
-      availableSpots: 12,
-      totalSpots: 25,
-      status: 'open',
-    },
-  ];
+  // Load events from API on mount
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await eventsAPI.getAll();
+      
+      // Format events for display
+      const formattedEvents = data.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        date: event.date ? new Date(event.date).toLocaleDateString('pt-BR', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : 'Data não definida',
+        time: '18:00', // Backend não tem horário específico
+        location: event.location || 'Local não definido',
+        description: event.description || 'Sem descrição',
+        category: 'Evento',
+        availableSpots: event.acceptsRegistration ? 20 : 0,
+        totalSpots: 20,
+        status: event.acceptsRegistration ? 'open' : 'closed',
+      }));
+      
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Erro ao carregar eventos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(true);
-    setSelectedEvent(null);
-    setFormData({
-      name: '',
-      cpf: '',
-      phone: '',
-      email: '',
-      observations: '',
-    });
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 5000);
+    try {
+      setLoading(true);
+      
+      if (!selectedEvent) {
+        alert('Nenhum evento selecionado');
+        return;
+      }
+
+      // Enviar inscrição para API
+      await inscriptionsAPI.create({
+        eventId: selectedEvent.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+      });
+
+      setShowSuccess(true);
+      setSelectedEvent(null);
+      setFormData({
+        name: '',
+        cpf: '',
+        phone: '',
+        email: '',
+        observations: '',
+      });
+      
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 5000);
+    } catch (error) {
+      console.error('Erro ao enviar inscrição:', error);
+      alert('Erro ao enviar inscrição. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getCategoryColor = (category: string) => {

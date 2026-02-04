@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Church, 
@@ -17,18 +17,22 @@ import {
   X,
   Save
 } from 'lucide-react';
+import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI } from '../src/services/api';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'eventos' | 'paroquia' | 'inscricoes' | 'guias';
+type TabType = 'eventos' | 'paroquia' | 'inscricoes' | 'guias' | 'textos';
 
 interface Event {
   id: string;
   title: string;
   date: string;
+  time: string;
   location: string;
+  description: string;
+  category: 'missa' | 'evento' | 'retiro' | 'festa';
   acceptsRegistration: boolean;
 }
 
@@ -46,6 +50,8 @@ interface Chapel {
   name: string;
   neighborhood: string;
   coordinator: string;
+  phone?: string;
+  email?: string;
 }
 
 interface ClergyMember {
@@ -53,6 +59,9 @@ interface ClergyMember {
   name: string;
   role: string;
   period: string;
+  bio?: string;
+  imageUrl?: string;
+  current?: boolean;
   email?: string;
   phone?: string;
 }
@@ -60,7 +69,15 @@ interface ClergyMember {
 interface Guide {
   id: string;
   title: string;
+  content: string;
   details: string[];
+}
+
+interface ContentText {
+  id: string;
+  key: string;
+  title: string;
+  content: string;
 }
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
@@ -69,57 +86,104 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [showChapelForm, setShowChapelForm] = useState(false);
   const [showCleryForm, setShowCleryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
+  const [showContentForm, setShowContentForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [_loading, setLoading] = useState(false);
 
-  // Mock data for events
-  const [events, setEvents] = useState<Event[]>([
-    { id: '1', title: 'Retiro de Quaresma', date: '28/02/2026', location: 'Casa de Retiros', acceptsRegistration: true },
-    { id: '2', title: 'Encontro de Casais', date: '14/03/2026', location: 'Salão Paroquial', acceptsRegistration: true },
-    { id: '3', title: 'Páscoa 2026', date: '05/04/2026', location: 'Igreja Matriz', acceptsRegistration: false },
-  ]);
+  // State from API
+  const [events, setEvents] = useState<Event[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [chapels, setChapels] = useState<Chapel[]>([]);
+  const [clergy, setCLergy] = useState<ClergyMember[]>([]);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [contentTexts, setContentTexts] = useState<ContentText[]>([]);
 
   // Form state
-  const [eventForm, setEventForm] = useState<Event>({ id: '', title: '', date: '', location: '', acceptsRegistration: true });
-  const [chapelForm, setChapelForm] = useState<Chapel>({ id: '', name: '', neighborhood: '', coordinator: '' });
-  const [clergyForm, setClergyForm] = useState<ClergyMember>({ id: '', name: '', role: '', period: '', email: '', phone: '' });
-  const [guideForm, setGuideForm] = useState<Guide>({ id: '', title: '', details: [] });
+  const [eventForm, setEventForm] = useState<Event>({
+    id: '',
+    title: '',
+    date: '',
+    time: '',
+    location: '',
+    description: '',
+    category: 'evento',
+    acceptsRegistration: true,
+  });
+  const [chapelForm, setChapelForm] = useState<Chapel>({ id: '', name: '', neighborhood: '', coordinator: '', phone: '', email: '' });
+  const [clergyForm, setClergyForm] = useState<ClergyMember>({ id: '', name: '', role: '', period: '', bio: '', imageUrl: '', current: false, email: '', phone: '' });
+  const [guideForm, setGuideForm] = useState<Guide>({ id: '', title: '', content: '', details: [] });
+  const [contentForm, setContentForm] = useState<ContentText>({ id: '', key: '', title: '', content: '' });
+  const [clergyPeriodMode, setClergyPeriodMode] = useState<'atual' | 'numeros'>('atual');
+  const [clergyPeriodStart, setClergyPeriodStart] = useState('');
+  const [clergyPeriodEnd, setClergyPeriodEnd] = useState('');
 
-  // Mock data for registrations
-  const [registrations, setRegistrations] = useState<Registration[]>([
-    { id: '1', event: 'Retiro de Quaresma', name: 'Maria Oliveira', email: 'maria@email.com', phone: '(14) 99999-9999', status: 'Confirmado' },
-    { id: '2', event: 'Retiro de Quaresma', name: 'Joaquin Neto', email: 'Neto@email.com', phone: '(14) 98888-8888', status: 'Pendente' },
-    { id: '3', event: 'Encontro de Casais', name: 'Julia e Michael', email: 'michael@email.com', phone: '(14) 97777-7777', status: 'Confirmado' },
-  ]);
+  const isClergyFormValid = Boolean(
+    clergyForm.name.trim() &&
+    clergyForm.role.trim() &&
+    clergyForm.period.trim()
+  );
 
-  // Mock data for chapels
-  const [chapels, setChapels] = useState<Chapel[]>([
-    { id: '1', name: 'Igreja Matriz Santo André', neighborhood: 'Centro', coordinator: 'Maria José da Silva' },
-    { id: '2', name: 'Capela São Pedro', neighborhood: 'Jardim Paraíso', coordinator: 'João Batista Santos' },
-    { id: '3', name: 'Capela Santa Rita', neighborhood: 'Vila Nova', coordinator: 'Ana Paula Oliveira' },
-  ]);
+  // Load data from API on mount
+  useEffect(() => {
+    loadAllData();
+  }, []);
 
-  // Mock data for clergy
-  const [clergy, setCLergy] = useState<ClergyMember[]>([
-    { id: '1', name: 'Pe. João Carlos Silva', role: 'Pároco', period: '2020 - Presente', email: 'pe.joao@email.com', phone: '(14) 3234-5678' },
-    { id: '2', name: 'Pe. Lucas Fernandes', role: 'Vigário', period: '2022 - Presente', email: 'pe.lucas@email.com', phone: '(14) 3234-5679' },
-  ]);
-
-  // Mock data for guides
-  const [guides, setGuides] = useState<Guide[]>([
-    { id: '1', title: 'Guia de Casamento', details: ['Documentação necessária', 'Preparação pré-matrimonial'] },
-    { id: '2', title: 'Guia de Batismo', details: ['Idade mínima recomendada', 'Escolha de padrinhos'] },
-  ]);
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      const [eventsData, chapelsData, clergyData, guidesData, inscriptionsData, contentData] = await Promise.all([
+        eventsAPI.getAll(),
+        chapelsAPI.getAll(),
+        clergyAPI.getAll(),
+        guidesAPI.getAll(),
+        inscriptionsAPI.getAll(),
+        contentAPI.getAll(),
+      ]);
+      
+      setEvents(eventsData || []);
+      setChapels(chapelsData || []);
+      setCLergy(clergyData || []);
+      setGuides(guidesData || []);
+      setContentTexts(contentData || []);
+      
+      // Format inscriptions for the table
+      if (inscriptionsData && Array.isArray(inscriptionsData)) {
+        const formatted = inscriptionsData.map((reg: any) => ({
+          id: reg.id,
+          event: events.find(e => e.id === reg.eventId)?.title || 'Evento desconhecido',
+          name: reg.name,
+          email: reg.email,
+          phone: reg.phone || '',
+          status: reg.status || 'Pendente',
+        }));
+        setRegistrations(formatted);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Event handlers
-  const handleSaveEvent = () => {
-    if (editingId) {
-      setEvents(events.map(e => e.id === editingId ? eventForm : e));
-    } else {
-      setEvents([...events, { ...eventForm, id: Date.now().toString() }]);
+  const handleSaveEvent = async () => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        await eventsAPI.update(editingId, eventForm);
+      } else {
+        await eventsAPI.create(eventForm);
+      }
+      await loadAllData();
+      setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true });
+      setShowEventForm(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+      alert('Erro ao salvar evento');
+    } finally {
+      setLoading(false);
     }
-    setEventForm({ id: '', title: '', date: '', location: '', acceptsRegistration: true });
-    setShowEventForm(false);
-    setEditingId(null);
   };
 
   const handleEditEvent = (event: Event) => {
@@ -128,19 +192,39 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setShowEventForm(true);
   };
 
-  const handleDeleteEvent = (id: string) => {
-    setEvents(events.filter(e => e.id !== id));
+  const handleDeleteEvent = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar este evento?')) {
+      try {
+        setLoading(true);
+        await eventsAPI.delete(id);
+        await loadAllData();
+      } catch (error) {
+        console.error('Erro ao deletar evento:', error);
+        alert('Erro ao deletar evento');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
-  const handleSaveChapel = () => {
-    if (editingId) {
-      setChapels(chapels.map(c => c.id === editingId ? chapelForm : c));
-    } else {
-      setChapels([...chapels, { ...chapelForm, id: Date.now().toString() }]);
+  const handleSaveChapel = async () => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        await chapelsAPI.update(editingId, chapelForm);
+      } else {
+        await chapelsAPI.create(chapelForm);
+      }
+      await loadAllData();
+      setChapelForm({ id: '', name: '', neighborhood: '', coordinator: '', phone: '', email: '' });
+      setShowChapelForm(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Erro ao salvar capela:', error);
+      alert('Erro ao salvar capela');
+    } finally {
+      setLoading(false);
     }
-    setChapelForm({ id: '', name: '', neighborhood: '', coordinator: '' });
-    setShowChapelForm(false);
-    setEditingId(null);
   };
 
   const handleEditChapel = (chapel: Chapel) => {
@@ -149,40 +233,120 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setShowChapelForm(true);
   };
 
-  const handleDeleteChapel = (id: string) => {
-    setChapels(chapels.filter(c => c.id !== id));
+  const handleDeleteChapel = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar esta capela?')) {
+      try {
+        setLoading(true);
+        await chapelsAPI.delete(id);
+        await loadAllData();
+      } catch (error) {
+        console.error('Erro ao deletar capela:', error);
+        alert('Erro ao deletar capela');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
-  const handleSaveCLergy = () => {
-    if (editingId) {
-      setCLergy(clergy.map(c => c.id === editingId ? clergyForm : c));
+  const updateClergyPeriod = (mode: 'atual' | 'numeros', start: string, end: string) => {
+    let period = '';
+    if (mode === 'atual') {
+      period = start ? `${start} - Presente` : 'Presente';
     } else {
-      setCLergy([...clergy, { ...clergyForm, id: Date.now().toString() }]);
+      if (start && end) {
+        period = `${start} - ${end}`;
+      } else if (start) {
+        period = `${start} -`;
+      }
     }
-    setClergyForm({ id: '', name: '', role: '', period: '', email: '', phone: '' });
-    setShowCleryForm(false);
-    setEditingId(null);
+
+    setClergyForm(prev => ({ ...prev, period }));
+  };
+
+  const parseClergyPeriod = (period: string) => {
+    const normalized = (period || '').toLowerCase();
+    const years = (period.match(/\d{4}/g) || []).filter(Boolean);
+
+    if (normalized.includes('presente') || normalized.includes('atual')) {
+      const start = years[0] || '';
+      setClergyPeriodMode('atual');
+      setClergyPeriodStart(start);
+      setClergyPeriodEnd('');
+      updateClergyPeriod('atual', start, '');
+      return;
+    }
+
+    const start = years[0] || '';
+    const end = years[1] || '';
+    setClergyPeriodMode('numeros');
+    setClergyPeriodStart(start);
+    setClergyPeriodEnd(end);
+    updateClergyPeriod('numeros', start, end);
+  };
+
+  const handleSaveCLergy = async () => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        await clergyAPI.update(editingId, clergyForm);
+      } else {
+        await clergyAPI.create(clergyForm);
+      }
+      await loadAllData();
+      setClergyForm({ id: '', name: '', role: '', period: '', bio: '', imageUrl: '', current: false, email: '', phone: '' });
+      setClergyPeriodMode('atual');
+      setClergyPeriodStart('');
+      setClergyPeriodEnd('');
+      setShowCleryForm(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Erro ao salvar membro do clero:', error);
+      alert('Erro ao salvar membro do clero');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditCLergy = (member: ClergyMember) => {
     setClergyForm(member);
+    parseClergyPeriod(member.period);
     setEditingId(member.id);
     setShowCleryForm(true);
   };
 
-  const handleDeleteCLergy = (id: string) => {
-    setCLergy(clergy.filter(c => c.id !== id));
+  const handleDeleteCLergy = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar este membro?')) {
+      try {
+        setLoading(true);
+        await clergyAPI.delete(id);
+        await loadAllData();
+      } catch (error) {
+        console.error('Erro ao deletar membro:', error);
+        alert('Erro ao deletar membro');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
-  const handleSaveGuide = () => {
-    if (editingId) {
-      setGuides(guides.map(g => g.id === editingId ? guideForm : g));
-    } else {
-      setGuides([...guides, { ...guideForm, id: Date.now().toString() }]);
+  const handleSaveGuide = async () => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        await guidesAPI.update(editingId, guideForm);
+      } else {
+        await guidesAPI.create(guideForm);
+      }
+      await loadAllData();
+      setGuideForm({ id: '', title: '', content: '', details: [] });
+      setShowGuideForm(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Erro ao salvar guia:', error);
+      alert('Erro ao salvar guia');
+    } finally {
+      setLoading(false);
     }
-    setGuideForm({ id: '', title: '', details: [] });
-    setShowGuideForm(false);
-    setEditingId(null);
   };
 
   const handleEditGuide = (guide: Guide) => {
@@ -191,14 +355,73 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setShowGuideForm(true);
   };
 
-  const handleDeleteGuide = (id: string) => {
-    setGuides(guides.filter(g => g.id !== id));
+  const handleDeleteGuide = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar este guia?')) {
+      try {
+        setLoading(true);
+        await guidesAPI.delete(id);
+        await loadAllData();
+      } catch (error) {
+        console.error('Erro ao deletar guia:', error);
+        alert('Erro ao deletar guia');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
-  const handleStatusChange = (registrationId: string, newStatus: string) => {
-    setRegistrations(registrations.map(reg => 
-      reg.id === registrationId ? { ...reg, status: newStatus } : reg
-    ));
+  const handleSaveContent = async () => {
+    try {
+      setLoading(true);
+      if (editingId) {
+        await contentAPI.update(editingId, contentForm);
+      } else {
+        await contentAPI.create(contentForm);
+      }
+      await loadAllData();
+      setContentForm({ id: '', key: '', title: '', content: '' });
+      setShowContentForm(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error('Erro ao salvar texto:', error);
+      alert('Erro ao salvar texto');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditContent = (content: ContentText) => {
+    setContentForm(content);
+    setEditingId(content.id);
+    setShowContentForm(true);
+  };
+
+  const handleDeleteContent = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja deletar este texto?')) {
+      try {
+        setLoading(true);
+        await contentAPI.delete(id);
+        await loadAllData();
+      } catch (error) {
+        console.error('Erro ao deletar texto:', error);
+        alert('Erro ao deletar texto');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleStatusChange = async (registrationId: string, newStatus: string) => {
+    try {
+      setLoading(true);
+      await inscriptionsAPI.update(registrationId, { status: newStatus });
+      await loadAllData();
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      alert('Erro ao atualizar status');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Modal for Event Form
@@ -219,18 +442,44 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
-          <input
-            type="text"
-            placeholder="Data (DD/MM/YYYY)"
-            value={eventForm.date}
-            onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input
+              type="date"
+              placeholder="Data"
+              value={eventForm.date}
+              onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Horário (ex: 19:00)"
+              value={eventForm.time}
+              onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
           <input
             type="text"
             placeholder="Local"
             value={eventForm.location}
             onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <select
+            value={eventForm.category}
+            onChange={(e) => setEventForm({ ...eventForm, category: e.target.value as Event['category'] })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          >
+            <option value="missa">Missa</option>
+            <option value="evento">Evento</option>
+            <option value="retiro">Retiro</option>
+            <option value="festa">Celebração</option>
+          </select>
+          <textarea
+            placeholder="Descrição do evento"
+            value={eventForm.description}
+            onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+            rows={4}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
           <label className="flex items-center space-x-2">
@@ -286,6 +535,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             onChange={(e) => setChapelForm({ ...chapelForm, coordinator: e.target.value })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
+          <input
+            type="tel"
+            placeholder="Telefone"
+            value={chapelForm.phone || ''}
+            onChange={(e) => setChapelForm({ ...chapelForm, phone: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <input
+            type="email"
+            placeholder="E-mail"
+            value={chapelForm.email || ''}
+            onChange={(e) => setChapelForm({ ...chapelForm, email: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
           <button
             onClick={handleSaveChapel}
             className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
@@ -300,53 +563,188 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   // Modal for Clergy Form
   const ClergyFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Adicionar'} Membro do Clero</h3>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-amber-900">{editingId ? 'Editar' : 'Adicionar'} Membro do Clero</h3>
           <button onClick={() => { setShowCleryForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
             <X className="w-6 h-6" />
           </button>
         </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Nome"
-            value={clergyForm.name}
-            onChange={(e) => setClergyForm({ ...clergyForm, name: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Função (ex: Pároco, Vigário, Bispo, Papa)"
-            value={clergyForm.role}
-            onChange={(e) => setClergyForm({ ...clergyForm, role: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Período (ex: 2020 - Presente)"
-            value={clergyForm.period}
-            onChange={(e) => setClergyForm({ ...clergyForm, period: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="email"
-            placeholder="E-mail (opcional)"
-            value={clergyForm.email}
-            onChange={(e) => setClergyForm({ ...clergyForm, email: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="tel"
-            placeholder="Telefone (opcional)"
-            value={clergyForm.phone}
-            onChange={(e) => setClergyForm({ ...clergyForm, phone: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label htmlFor="clergy-name" className="text-sm font-medium text-amber-900">Nome completo</label>
+            <input
+              id="clergy-name"
+              type="text"
+              placeholder="Ex: Pe. João Silva"
+              value={clergyForm.name}
+              onChange={(e) => setClergyForm({ ...clergyForm, name: e.target.value })}
+              autoComplete="name"
+              autoFocus
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="clergy-role" className="text-sm font-medium text-amber-900">Função</label>
+            <input
+              id="clergy-role"
+              type="text"
+              list="clergy-roles"
+              placeholder="Ex: Pároco, Vigário, Bispo, Papa"
+              value={clergyForm.role}
+              onChange={(e) => setClergyForm({ ...clergyForm, role: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+            <datalist id="clergy-roles">
+              <option value="Pároco" />
+              <option value="Sacerdote" />
+              <option value="Vigário Paroquial" />
+              <option value="Bispo" />
+              <option value="Papa" />
+              <option value="Diácono" />
+            </datalist>
+            <p className="text-xs text-gray-500">Escolha um cargo sugerido ou digite um novo.</p>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="clergy-period-mode" className="text-sm font-medium text-amber-900">Período</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <select
+                id="clergy-period-mode"
+                value={clergyPeriodMode}
+                onChange={(e) => {
+                  const mode = e.target.value as 'atual' | 'numeros';
+                  setClergyPeriodMode(mode);
+                  updateClergyPeriod(mode, clergyPeriodStart, clergyPeriodEnd);
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+              >
+                <option value="atual">Atual</option>
+                <option value="numeros">Somente números</option>
+              </select>
+              <input
+                id="clergy-period-start"
+                type="number"
+                inputMode="numeric"
+                min={1900}
+                max={2100}
+                placeholder="Início (ex: 2020)"
+                value={clergyPeriodStart}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setClergyPeriodStart(value);
+                  updateClergyPeriod(clergyPeriodMode, value, clergyPeriodEnd);
+                }}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+              />
+              {clergyPeriodMode === 'numeros' ? (
+                <input
+                  id="clergy-period-end"
+                  type="number"
+                  inputMode="numeric"
+                  min={1900}
+                  max={2100}
+                  placeholder="Fim (ex: 2024)"
+                  value={clergyPeriodEnd}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setClergyPeriodEnd(value);
+                    updateClergyPeriod(clergyPeriodMode, clergyPeriodStart, value);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value="Presente"
+                  disabled
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                />
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="clergy-email" className="text-sm font-medium text-amber-900">E-mail (opcional)</label>
+            <input
+              id="clergy-email"
+              type="email"
+              placeholder="exemplo@paroquia.org"
+              value={clergyForm.email}
+              onChange={(e) => setClergyForm({ ...clergyForm, email: e.target.value })}
+              autoComplete="email"
+              inputMode="email"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="clergy-bio" className="text-sm font-medium text-amber-900">Biografia (opcional)</label>
+            <textarea
+              id="clergy-bio"
+              placeholder="Breve biografia"
+              value={clergyForm.bio || ''}
+              onChange={(e) => setClergyForm({ ...clergyForm, bio: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="clergy-image" className="text-sm font-medium text-amber-900">Imagem (URL)</label>
+            <input
+              id="clergy-image"
+              type="text"
+              placeholder="https://..."
+              value={clergyForm.imageUrl || ''}
+              onChange={(e) => setClergyForm({ ...clergyForm, imageUrl: e.target.value })}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+            {clergyForm.imageUrl && (
+              <div className="mt-2 rounded-lg border border-amber-100 bg-amber-50/40 p-2">
+                <p className="text-xs text-amber-800 mb-2">Pré-visualização</p>
+                <img
+                  src={clergyForm.imageUrl}
+                  alt="Pré-visualização"
+                  className="h-24 w-full object-cover rounded-md"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.src = 'https://via.placeholder.com/640x360?text=Imagem+inv%C3%A1lida';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={Boolean(clergyForm.current)}
+              onChange={(e) => setClergyForm({ ...clergyForm, current: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <span className="text-gray-700">Atual</span>
+          </label>
+          <div className="space-y-1">
+            <label htmlFor="clergy-phone" className="text-sm font-medium text-amber-900">Telefone (opcional)</label>
+            <input
+              id="clergy-phone"
+              type="tel"
+              placeholder="(00) 00000-0000"
+              value={clergyForm.phone}
+              onChange={(e) => setClergyForm({ ...clergyForm, phone: e.target.value })}
+              autoComplete="tel"
+              inputMode="tel"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+          {!isClergyFormValid && (
+            <p className="text-xs text-amber-700">Preencha nome, função e período para salvar.</p>
+          )}
           <button
             onClick={handleSaveCLergy}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+            disabled={!isClergyFormValid}
+            className={`w-full flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl font-semibold transition-all ${
+              isClergyFormValid
+                ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white'
+                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            }`}
           >
             <Save className="w-5 h-5" />
             <span>Salvar Membro</span>
@@ -375,6 +773,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
           <textarea
+            placeholder="Resumo do guia (aparece no card)"
+            value={guideForm.content}
+            onChange={(e) => setGuideForm({ ...guideForm, content: e.target.value })}
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <textarea
             placeholder="Detalhes (um por linha)"
             value={guideForm.details.join('\n')}
             onChange={(e) => setGuideForm({ ...guideForm, details: e.target.value.split('\n').filter(d => d.trim()) })}
@@ -387,6 +792,50 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           >
             <Save className="w-5 h-5" />
             <span>Salvar Guia</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ContentFormModal = () => (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Texto Institucional</h3>
+          <button onClick={() => { setShowContentForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Chave única (ex: about, mission)"
+            value={contentForm.key}
+            onChange={(e) => setContentForm({ ...contentForm, key: e.target.value })}
+            disabled={!!editingId}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none disabled:bg-gray-100"
+          />
+          <input
+            type="text"
+            placeholder="Título"
+            value={contentForm.title}
+            onChange={(e) => setContentForm({ ...contentForm, title: e.target.value })}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <textarea
+            placeholder="Conteúdo"
+            value={contentForm.content}
+            onChange={(e) => setContentForm({ ...contentForm, content: e.target.value })}
+            rows={6}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <button
+            onClick={handleSaveContent}
+            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+          >
+            <Save className="w-5 h-5" />
+            <span>Salvar Texto</span>
           </button>
         </div>
       </div>
@@ -453,6 +902,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <span>Guias</span>
             </button>
             <button
+              onClick={() => setActiveTab('textos')}
+              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'textos'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-amber-50'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>Textos Institucionais</span>
+            </button>
+            <button
               onClick={() => setActiveTab('inscricoes')}
               className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'inscricoes'
@@ -473,7 +933,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Eventos</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', location: '', acceptsRegistration: true }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true }); setEditingId(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -603,7 +1063,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <div>
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Guias</h2>
-                  <button onClick={() => { setGuideForm({ id: '', title: '', details: [] }); setEditingId(null); setShowGuideForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl">
+                  <button onClick={() => { setGuideForm({ id: '', title: '', content: '', details: [] }); setEditingId(null); setShowGuideForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl">
                     <Plus className="w-5 h-5" />
                     <span>Novo Guia</span>
                   </button>
@@ -691,6 +1151,53 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </div>
               </div>
             )}
+
+            {activeTab === 'textos' && (
+              <div>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-amber-900">Textos Institucionais</h2>
+                  <button
+                    onClick={() => {
+                      setContentForm({ id: '', key: '', title: '', content: '' });
+                      setEditingId(null);
+                      setShowContentForm(true);
+                    }}
+                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Novo Texto</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {contentTexts.map((text) => (
+                    <div key={text.id} className="bg-white rounded-xl border-2 border-amber-100 p-6 hover:border-amber-300 transition-all">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-amber-900">{text.title}</h3>
+                          <p className="text-sm text-gray-500">Chave: {text.key}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditContent(text)}
+                            className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteContent(text.id)}
+                            className="p-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-gray-700 text-sm line-clamp-2">{text.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -700,6 +1207,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       {showChapelForm && <ChapelFormModal />}
       {showCleryForm && <ClergyFormModal />}
       {showGuideForm && <GuideFormModal />}
+      {showContentForm && <ContentFormModal />}
     </section>
   );
 }

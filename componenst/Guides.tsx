@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, Book, Heart, Users, Flame, Zap, Crown } from 'lucide-react';
+import { guidesAPI } from '../src/services/api';
 
 interface Guide {
-  id: string;
+  id: string | number;
   title: string;
   icon: React.ReactNode;
   content: string;
@@ -11,8 +12,46 @@ interface Guide {
 
 export function Guides() {
   const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
 
-  const guides: Guide[] = [
+  useEffect(() => {
+    loadGuides();
+  }, []);
+
+  const loadGuides = async () => {
+    try {
+      const data = await guidesAPI.getAll();
+      
+      if (data && data.length > 0) {
+        // Mapear dados da API para incluir ícones
+        const guidesWithIcons = data.map((guide: any) => ({
+          ...guide,
+          icon: getIconByTitle(guide.title),
+          details: typeof guide.details === 'string' ? JSON.parse(guide.details) : guide.details || []
+        }));
+        setGuides(guidesWithIcons);
+      } else {
+        // Fallback para dados padrão se API falhar ou retornar vazio
+        setGuides(getDefaultGuides());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar guias:', error);
+      setGuides(getDefaultGuides());
+    }
+  };
+
+  const getIconByTitle = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('casamento')) return <Heart className="w-8 h-8" />;
+    if (lowerTitle.includes('batismo')) return <Flame className="w-8 h-8" />;
+    if (lowerTitle.includes('catequese')) return <Book className="w-8 h-8" />;
+    if (lowerTitle.includes('eucaristia') || lowerTitle.includes('comunhão')) return <Users className="w-8 h-8" />;
+    if (lowerTitle.includes('confirmação') || lowerTitle.includes('crisma')) return <Zap className="w-8 h-8" />;
+    if (lowerTitle.includes('exéquias') || lowerTitle.includes('funeral')) return <Crown className="w-8 h-8" />;
+    return <Book className="w-8 h-8" />;
+  };
+
+  const getDefaultGuides = (): Guide[] => [
     {
       id: 'casamento',
       title: 'Guia de Casamento',
@@ -111,8 +150,9 @@ export function Guides() {
     }
   ];
 
-  const toggleGuide = (id: string) => {
-    setExpandedGuide(expandedGuide === id ? null : id);
+  const toggleGuide = (id: string | number) => {
+    const idStr = String(id);
+    setExpandedGuide(expandedGuide === idStr ? null : idStr);
   };
 
   return (
@@ -143,7 +183,7 @@ export function Guides() {
                   </div>
                   <ChevronDown
                     className={`w-6 h-6 text-amber-600 transition-transform duration-300 ${
-                      expandedGuide === guide.id ? 'rotate-180' : ''
+                      expandedGuide === String(guide.id) ? 'rotate-180' : ''
                     }`}
                   />
                 </div>
@@ -155,7 +195,7 @@ export function Guides() {
                 </p>
               </div>
 
-              {expandedGuide === guide.id && (
+              {expandedGuide === String(guide.id) && (
                 <div className="px-6 pb-6 border-t border-amber-100/50 bg-amber-50/20">
                   <ul className="space-y-3 mt-4">
                     {guide.details.map((detail, index) => (

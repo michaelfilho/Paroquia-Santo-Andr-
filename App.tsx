@@ -16,7 +16,7 @@ import { AdminDashboard } from './componenst/AdminDashboard';
 type PageType = 'home' | 'inscricoes' | 'guias' | 'admin-login' | 'admin-dashboard';
 
 export default function App() {
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<string | number | null>(null);
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -98,9 +98,9 @@ export default function App() {
       </main>
       <Footer onAdminClick={handleAdminClick} />
       
-      {selectedEvent && (
+      {selectedEvent !== null && (
         <EventGallery 
-          eventId={selectedEvent} 
+          eventId={String(selectedEvent)} 
           onClose={() => setSelectedEvent(null)} 
         />
       )}

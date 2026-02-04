@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Mail, Phone } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
+import { clergyAPI } from '../src/services/api';
 import currentPriestImage from '../Styles/img/WhatsApp Image 2026-02-03 at 10.39.15.jpeg';
 
 interface ClergyMember {
@@ -15,7 +17,31 @@ interface ClergyMember {
 }
 
 export function Clergy() {
-  const priests: ClergyMember[] = [
+  const [clergyMembers, setClergyMembers] = useState<ClergyMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadClergy();
+  }, []);
+
+  const loadClergy = async () => {
+    try {
+      const data = await clergyAPI.getAll();
+      // Se houver dados da API, usa eles; senão usa os padrões
+      if (data && data.length > 0) {
+        setClergyMembers(data);
+      } else {
+        setClergyMembers(getDefaultClergy());
+      }
+    } catch (error) {
+      console.error('Erro ao carregar clero:', error);
+      setClergyMembers(getDefaultClergy());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDefaultClergy = (): ClergyMember[] => [
     {
       id: '1',
       name: 'Pe. Joaquim Neto',
@@ -45,9 +71,6 @@ export function Clergy() {
       imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       current: false,
     },
-  ];
-
-  const vicars: ClergyMember[] = [
     {
       id: '4',
       name: 'Pe. Lucas Fernandes',
@@ -68,9 +91,6 @@ export function Clergy() {
       imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       current: false,
     },
-  ];
-
-  const pope: ClergyMember[] = [
     {
       id: '6',
       name: 'Papa Francisco',
@@ -80,9 +100,6 @@ export function Clergy() {
       imageUrl: 'https://images.unsplash.com/photo-1661448836587-f9ea11d601ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYXRob2xpYyUyMHByaWVzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2OTk2NDAxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
       current: true,
     },
-  ];
-
-  const bishops: ClergyMember[] = [
     {
       id: '7',
       name: 'Dom Cerineu Pivatto',
@@ -155,6 +172,12 @@ export function Clergy() {
     </div>
   );
 
+  // Filtrar membros por role (usando os dados do estado)
+  const pope = clergyMembers.filter(m => m.role === 'Papa');
+  const bishops = clergyMembers.filter(m => m.role === 'Bispo');
+  const priests = clergyMembers.filter(m => m.role === 'Sacerdote' || m.role === 'Pároco');
+  const vicars = clergyMembers.filter(m => m.role === 'Vigário Paroquial');
+
   return (
     <section id="clero" className="py-24 bg-gradient-to-b from-white to-amber-50/30">
       <div className="max-w-7xl mx-auto px-4">
@@ -164,41 +187,47 @@ export function Clergy() {
           </h2>
         </div>
 
-        <div className="mb-24">
-          <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
-            Papa
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {pope.map(member => (
-              <ClergyCard key={member.id} member={member} />
-            ))}
+        {pope.length > 0 && (
+          <div className="mb-24">
+            <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
+              Papa
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {pope.map(member => (
+                <ClergyCard key={member.id} member={member} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="mb-24">
-          <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
-            Bispo
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {bishops.map(bishop => (
-              <ClergyCard key={bishop.id} member={bishop} />
-            ))}
+        {bishops.length > 0 && (
+          <div className="mb-24">
+            <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
+              Bispo
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {bishops.map(bishop => (
+                <ClergyCard key={bishop.id} member={bishop} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div>
-          <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
-            Sacerdotes
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {priests.map(priest => (
-              <ClergyCard key={priest.id} member={priest} />
-            ))}
-            {vicars.map(vicar => (
-              <ClergyCard key={vicar.id} member={vicar} />
-            ))}
+        {(priests.length > 0 || vicars.length > 0) && (
+          <div>
+            <h3 className="text-4xl font-bold text-amber-900 mb-12 text-center">
+              Sacerdotes
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {priests.map(priest => (
+                <ClergyCard key={priest.id} member={priest} />
+              ))}
+              {vicars.map(vicar => (
+                <ClergyCard key={vicar.id} member={vicar} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
