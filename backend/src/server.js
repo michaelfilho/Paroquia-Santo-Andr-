@@ -47,6 +47,33 @@ app.get('/api/health', (req, res) => {
 // Public Routes
 app.use('/api/auth', authRoutes);
 
+// Public events endpoint
+app.get('/api/public/events', async (req, res) => {
+  try {
+    const { Event, Inscription } = require('./models');
+    const events = await Event.findAll({
+      where: { published: true },
+      order: [['createdAt', 'DESC']],
+    });
+
+    const eventsWithCounts = await Promise.all(
+      events.map(async (event) => {
+        const confirmedCount = await Inscription.count({
+          where: { eventId: event.id, status: 'Confirmado' },
+        });
+        return {
+          ...event.toJSON(),
+          confirmedInscriptions: confirmedCount,
+        };
+      })
+    );
+
+    res.json(eventsWithCounts);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar eventos', error: error.message });
+  }
+});
+
 // Protected Routes (requerem autenticação)
 app.use('/api/events', authMiddleware, eventRoutes);
 app.use('/api/chapels', authMiddleware, chapelRoutes);

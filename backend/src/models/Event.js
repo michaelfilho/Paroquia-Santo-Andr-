@@ -35,6 +35,15 @@ const Event = sequelize.define('Event', {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+  published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  maxParticipants: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null,
+  },
 }, {
   timestamps: true,
 });

@@ -3,6 +3,31 @@ const { Event, Inscription } = require('../models');
 
 const router = express.Router();
 
+// GET events with inscription count
+router.get('/public/with-counts', async (req, res) => {
+  try {
+    const events = await Event.findAll({
+      order: [['createdAt', 'DESC']],
+    });
+
+    const eventsWithCounts = await Promise.all(
+      events.map(async (event) => {
+        const confirmedCount = await Inscription.count({
+          where: { eventId: event.id, status: 'Confirmado' },
+        });
+        return {
+          ...event.toJSON(),
+          confirmedInscriptions: confirmedCount,
+        };
+      })
+    );
+
+    res.json(eventsWithCounts);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar eventos', error: error.message });
+  }
+});
+
 // GET all events
 router.get('/', async (req, res) => {
   try {

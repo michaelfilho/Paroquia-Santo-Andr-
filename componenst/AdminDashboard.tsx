@@ -15,7 +15,9 @@ import {
   MapPin,
   User,
   X,
-  Save
+  Save,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI } from '../src/services/api';
 
@@ -23,7 +25,7 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'eventos' | 'paroquia' | 'inscricoes' | 'guias' | 'textos';
+type TabType = 'eventos' | 'programacoes' | 'inscricoes-eventos' | 'paroquia' | 'inscricoes' | 'guias' | 'textos';
 
 interface Event {
   id: string;
@@ -34,6 +36,8 @@ interface Event {
   description: string;
   category: 'missa' | 'evento' | 'retiro' | 'festa';
   acceptsRegistration: boolean;
+  published?: boolean;
+  maxParticipants?: number | null;
 }
 
 interface Registration {
@@ -80,6 +84,543 @@ interface ContentText {
   content: string;
 }
 
+interface EventFormModalProps {
+  editingId: string | null;
+  eventForm: Event;
+  onClose: () => void;
+  onSave: () => void;
+  onTitleChange: (value: string) => void;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onLocationChange: (value: string) => void;
+  onCategoryChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onRegistrationChange: (value: boolean) => void;
+  onMaxParticipantsChange?: (value: number | null) => void;
+}
+
+const EventFormModal = ({
+  editingId,
+  eventForm,
+  onClose,
+  onSave,
+  onTitleChange,
+  onDateChange,
+  onTimeChange,
+  onLocationChange,
+  onCategoryChange,
+  onDescriptionChange,
+  onRegistrationChange,
+  onMaxParticipantsChange,
+}: EventFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Evento</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Título do evento"
+          value={eventForm.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input
+            type="date"
+            placeholder="Data"
+            value={eventForm.date}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <input
+            type="number"
+            placeholder="Horário (ex: 1900)"
+            value={eventForm.time}
+            onChange={(e) => onTimeChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            min="0"
+            max="2359"
+          />
+        </div>
+        <input
+          type="text"
+          placeholder="Local"
+          value={eventForm.location}
+          onChange={(e) => onLocationChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <select
+          value={eventForm.category}
+          onChange={(e) => onCategoryChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        >
+          <option value="missa">Missa</option>
+          <option value="evento">Evento</option>
+          <option value="retiro">Retiro</option>
+          <option value="festa">Celebração</option>
+        </select>
+        <textarea
+          placeholder="Descrição do evento"
+          value={eventForm.description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={eventForm.acceptsRegistration}
+            onChange={(e) => onRegistrationChange(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-gray-700">Aceita Inscrições</span>
+        </label>
+        {eventForm.acceptsRegistration && (
+          <input
+            type="number"
+            placeholder="Quantidade máxima de participantes (opcional)"
+            value={eventForm.maxParticipants || ''}
+            onChange={(e) => onMaxParticipantsChange?.(e.target.value ? parseInt(e.target.value) : null)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            min="1"
+          />
+        )}
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Evento</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+interface ChapelFormModalProps {
+  editingId: string | null;
+  chapelForm: Chapel;
+  onClose: () => void;
+  onSave: () => void;
+  onNameChange: (value: string) => void;
+  onNeighborhoodChange: (value: string) => void;
+  onCoordinatorChange: (value: string) => void;
+  onPhoneChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+}
+
+const ChapelFormModal = ({
+  editingId,
+  chapelForm,
+  onClose,
+  onSave,
+  onNameChange,
+  onNeighborhoodChange,
+  onCoordinatorChange,
+  onPhoneChange,
+  onEmailChange,
+}: ChapelFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Nova'} Capela</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Nome da capela"
+          value={chapelForm.name}
+          onChange={(e) => onNameChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Bairro"
+          value={chapelForm.neighborhood}
+          onChange={(e) => onNeighborhoodChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Coordenador"
+          value={chapelForm.coordinator}
+          onChange={(e) => onCoordinatorChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="tel"
+          placeholder="Telefone"
+          value={chapelForm.phone || ''}
+          onChange={(e) => onPhoneChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="email"
+          placeholder="E-mail"
+          value={chapelForm.email || ''}
+          onChange={(e) => onEmailChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Capela</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+interface ClergyFormModalProps {
+  editingId: string | null;
+  clergyForm: ClergyMember;
+  clergyPeriodMode: 'atual' | 'numeros';
+  clergyPeriodStart: string;
+  clergyPeriodEnd: string;
+  isClergyFormValid: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  onNameChange: (value: string) => void;
+  onRoleChange: (value: string) => void;
+  onPeriodModeChange: (mode: 'atual' | 'numeros') => void;
+  onPeriodStartChange: (value: string) => void;
+  onPeriodEndChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onBioChange: (value: string) => void;
+  onImageChange: (value: string) => void;
+  onCurrentChange: (value: boolean) => void;
+  onPhoneChange: (value: string) => void;
+}
+
+const ClergyFormModal = ({
+  editingId,
+  clergyForm,
+  clergyPeriodMode,
+  clergyPeriodStart,
+  clergyPeriodEnd,
+  isClergyFormValid,
+  onClose,
+  onSave,
+  onNameChange,
+  onRoleChange,
+  onPeriodModeChange,
+  onPeriodStartChange,
+  onPeriodEndChange,
+  onEmailChange,
+  onBioChange,
+  onImageChange,
+  onCurrentChange,
+  onPhoneChange,
+}: ClergyFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-bold text-amber-900">{editingId ? 'Editar' : 'Adicionar'} Membro do Clero</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <label htmlFor="clergy-name" className="text-sm font-medium text-amber-900">Nome completo</label>
+          <input
+            id="clergy-name"
+            type="text"
+            placeholder="Ex: Pe. João Silva"
+            value={clergyForm.name}
+            onChange={(e) => onNameChange(e.target.value)}
+            autoFocus
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="clergy-role" className="text-sm font-medium text-amber-900">Função</label>
+          <input
+            id="clergy-role"
+            type="text"
+            list="clergy-roles"
+            placeholder="Ex: Pároco, Vigário, Bispo, Papa"
+            value={clergyForm.role}
+            onChange={(e) => onRoleChange(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <datalist id="clergy-roles">
+            <option value="Pároco" />
+            <option value="Administrador" />
+            <option value="Vigário Paroquial" />
+            <option value="Bispo" />
+            <option value="Papa" />
+            <option value="Diácono" />
+          </datalist>
+          <p className="text-xs text-gray-500">Escolha um cargo sugerido ou digite um novo.</p>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="clergy-period-mode" className="text-sm font-medium text-amber-900">Período</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <select
+              id="clergy-period-mode"
+              value={clergyPeriodMode}
+              onChange={(e) => onPeriodModeChange(e.target.value as 'atual' | 'numeros')}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            >
+              <option value="atual">Atual</option>
+              <option value="numeros">Somente números</option>
+            </select>
+            <input
+              id="clergy-period-start"
+              type="number"
+              inputMode="numeric"
+              min={1900}
+              max={2100}
+              placeholder="Início (ex: 2020)"
+              value={clergyPeriodStart}
+              onChange={(e) => onPeriodStartChange(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+            {clergyPeriodMode === 'numeros' ? (
+              <input
+                id="clergy-period-end"
+                type="number"
+                inputMode="numeric"
+                min={1900}
+                max={2100}
+                placeholder="Fim (ex: 2024)"
+                value={clergyPeriodEnd}
+                onChange={(e) => onPeriodEndChange(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+              />
+            ) : (
+              <input
+                type="text"
+                value="Presente"
+                disabled
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+              />
+            )}
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="clergy-email" className="text-sm font-medium text-amber-900">E-mail (opcional)</label>
+          <input
+            id="clergy-email"
+            type="email"
+            placeholder="exemplo@paroquia.org"
+            value={clergyForm.email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="clergy-bio" className="text-sm font-medium text-amber-900">Biografia (opcional)</label>
+          <textarea
+            id="clergy-bio"
+            placeholder="Breve biografia"
+            value={clergyForm.bio || ''}
+            onChange={(e) => onBioChange(e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="clergy-image" className="text-sm font-medium text-amber-900">Imagem (URL)</label>
+          <input
+            id="clergy-image"
+            type="text"
+            placeholder="https://..."
+            value={clergyForm.imageUrl || ''}
+            onChange={(e) => onImageChange(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          {clergyForm.imageUrl && (
+            <div className="mt-2 rounded-lg border border-amber-100 bg-amber-50/40 p-2">
+              <p className="text-xs text-amber-800 mb-2">Pré-visualização</p>
+              <img
+                src={clergyForm.imageUrl}
+                alt="Pré-visualização"
+                className="h-24 w-full object-cover rounded-md"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.src = 'https://via.placeholder.com/640x360?text=Imagem+inv%C3%A1lida';
+                }}
+              />
+            </div>
+          )}
+        </div>
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={Boolean(clergyForm.current)}
+            onChange={(e) => onCurrentChange(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-gray-700">Atual</span>
+        </label>
+        <div className="space-y-1">
+          <label htmlFor="clergy-phone" className="text-sm font-medium text-amber-900">Telefone (opcional)</label>
+          <input
+            id="clergy-phone"
+            type="tel"
+            placeholder="(00) 00000-0000"
+            value={clergyForm.phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            autoComplete="tel"
+            inputMode="tel"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
+        {!isClergyFormValid && (
+          <p className="text-xs text-amber-700">Preencha nome, função e período para salvar.</p>
+        )}
+        <button
+          onClick={onSave}
+          disabled={!isClergyFormValid}
+          className={`w-full flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl font-semibold transition-all ${
+            isClergyFormValid
+              ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white'
+              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Membro</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+interface GuideFormModalProps {
+  editingId: string | null;
+  guideForm: Guide;
+  onClose: () => void;
+  onSave: () => void;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
+  onDetailsChange: (value: string) => void;
+}
+
+const GuideFormModal = ({
+  editingId,
+  guideForm,
+  onClose,
+  onSave,
+  onTitleChange,
+  onContentChange,
+  onDetailsChange,
+}: GuideFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Guia</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Título do guia"
+          value={guideForm.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <textarea
+          placeholder="Resumo do guia (aparece no card)"
+          value={guideForm.content}
+          onChange={(e) => onContentChange(e.target.value)}
+          rows={3}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <textarea
+          placeholder="Detalhes (um por linha)"
+          value={guideForm.details.join('\n')}
+          onChange={(e) => onDetailsChange(e.target.value)}
+          rows={5}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Guia</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+interface ContentFormModalProps {
+  editingId: string | null;
+  contentForm: ContentText;
+  onClose: () => void;
+  onSave: () => void;
+  onKeyChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
+  onContentChange: (value: string) => void;
+}
+
+const ContentFormModal = ({
+  editingId,
+  contentForm,
+  onClose,
+  onSave,
+  onKeyChange,
+  onTitleChange,
+  onContentChange,
+}: ContentFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Texto Institucional</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Chave única (ex: about, mission)"
+          value={contentForm.key}
+          onChange={(e) => onKeyChange(e.target.value)}
+          disabled={!!editingId}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none disabled:bg-gray-100"
+        />
+        <input
+          type="text"
+          placeholder="Título"
+          value={contentForm.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <textarea
+          placeholder="Conteúdo"
+          value={contentForm.content}
+          onChange={(e) => onContentChange(e.target.value)}
+          rows={6}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Texto</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('eventos');
   const [showEventForm, setShowEventForm] = useState(false);
@@ -122,6 +663,142 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     clergyForm.role.trim() &&
     clergyForm.period.trim()
   );
+
+  // Agrupar eventos por mês
+    // Event form handlers
+    const handleEventTitleChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, title: value }));
+    };
+
+    const handleEventDateChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, date: value }));
+    };
+
+    const handleEventTimeChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, time: value }));
+    };
+
+    const handleEventLocationChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, location: value }));
+    };
+
+    const handleEventCategoryChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, category: value as Event['category'] }));
+    };
+
+    const handleEventDescriptionChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, description: value }));
+    };
+
+    const handleEventRegistrationChange = (value: boolean) => {
+      setEventForm(prev => ({ ...prev, acceptsRegistration: value }));
+    };
+
+    const handleEventMaxParticipantsChange = (value: number | null) => {
+      setEventForm(prev => ({ ...prev, maxParticipants: value }));
+    };
+
+    // Chapel form handlers
+    const handleChapelNameChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, name: value }));
+    };
+
+    const handleChapelNeighborhoodChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, neighborhood: value }));
+    };
+
+    const handleChapelCoordinatorChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, coordinator: value }));
+    };
+
+    const handleChapelPhoneChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, phone: value }));
+    };
+
+    const handleChapelEmailChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, email: value }));
+    };
+
+    // Clergy form handlers
+    const handleClergyNameChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, name: value }));
+    };
+
+    const handleClergyRoleChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, role: value }));
+    };
+
+    const handleClergyEmailChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, email: value }));
+    };
+
+    const handleClergyBioChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, bio: value }));
+    };
+
+    const handleClergyImageChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, imageUrl: value }));
+    };
+
+    const handleClergyCurrentChange = (value: boolean) => {
+      setClergyForm(prev => ({ ...prev, current: value }));
+    };
+
+    const handleClergyPhoneChange = (value: string) => {
+      setClergyForm(prev => ({ ...prev, phone: value }));
+    };
+
+    // Guide form handlers
+    const handleGuideTitleChange = (value: string) => {
+      setGuideForm(prev => ({ ...prev, title: value }));
+    };
+
+    const handleGuideContentChange = (value: string) => {
+      setGuideForm(prev => ({ ...prev, content: value }));
+    };
+
+    const handleGuideDetailsChange = (value: string) => {
+      setGuideForm(prev => ({ ...prev, details: value.split('\n').filter(d => d.trim()) }));
+    };
+
+    // Content form handlers
+    const handleContentKeyChange = (value: string) => {
+      setContentForm(prev => ({ ...prev, key: value }));
+    };
+
+    const handleContentTitleChange = (value: string) => {
+      setContentForm(prev => ({ ...prev, title: value }));
+    };
+
+    const handleContentContentChange = (value: string) => {
+      setContentForm(prev => ({ ...prev, content: value }));
+    };
+
+  const groupEventsByMonth = (eventsList: Event[]) => {
+    const grouped: { [key: string]: Event[] } = {};
+    
+    eventsList.forEach(event => {
+      const date = new Date(event.date);
+      const key = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(event);
+    });
+
+    // Ordenar meses
+    return Object.keys(grouped).sort().reverse().reduce((acc, key) => {
+      acc[key] = grouped[key].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      return acc;
+    }, {} as { [key: string]: Event[] });
+  };
+
+  const formatTime = (time: string | number | undefined): string => {
+    if (!time) return 'Horário não informado';
+    const timeStr = String(time).padStart(4, '0');
+    return `${timeStr.slice(0, 2)}:${timeStr.slice(2)}`;
+  };
 
   // Load data from API on mount
   useEffect(() => {
@@ -207,6 +884,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
+  const handleTogglePublish = async (event: Event) => {
+    try {
+      setLoading(true);
+      const updatedEvent = { ...event, published: !event.published };
+      await eventsAPI.update(event.id, updatedEvent);
+      await loadAllData();
+    } catch (error) {
+      console.error('Erro ao publicar evento:', error);
+      alert('Erro ao publicar evento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveChapel = async () => {
     try {
       setLoading(true);
@@ -261,6 +952,21 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
 
     setClergyForm(prev => ({ ...prev, period }));
+  };
+
+  const handleClergyPeriodModeChange = (mode: 'atual' | 'numeros') => {
+    setClergyPeriodMode(mode);
+    updateClergyPeriod(mode, clergyPeriodStart, clergyPeriodEnd);
+  };
+
+  const handleClergyPeriodStartChange = (value: string) => {
+    setClergyPeriodStart(value);
+    updateClergyPeriod(clergyPeriodMode, value, clergyPeriodEnd);
+  };
+
+  const handleClergyPeriodEndChange = (value: string) => {
+    setClergyPeriodEnd(value);
+    updateClergyPeriod(clergyPeriodMode, clergyPeriodStart, value);
   };
 
   const parseClergyPeriod = (period: string) => {
@@ -424,424 +1130,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  // Modal for Event Form
-  const EventFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Evento</h3>
-          <button onClick={() => { setShowEventForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Título do evento"
-            value={eventForm.title}
-            onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input
-              type="date"
-              placeholder="Data"
-              value={eventForm.date}
-              onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-            <input
-              type="text"
-              placeholder="Horário (ex: 19:00)"
-              value={eventForm.time}
-              onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Local"
-            value={eventForm.location}
-            onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <select
-            value={eventForm.category}
-            onChange={(e) => setEventForm({ ...eventForm, category: e.target.value as Event['category'] })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          >
-            <option value="missa">Missa</option>
-            <option value="evento">Evento</option>
-            <option value="retiro">Retiro</option>
-            <option value="festa">Celebração</option>
-          </select>
-          <textarea
-            placeholder="Descrição do evento"
-            value={eventForm.description}
-            onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={eventForm.acceptsRegistration}
-              onChange={(e) => setEventForm({ ...eventForm, acceptsRegistration: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <span className="text-gray-700">Aceita Inscrições</span>
-          </label>
-          <button
-            onClick={handleSaveEvent}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
-          >
-            <Save className="w-5 h-5" />
-            <span>Salvar Evento</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const eventosFiltrados = events.filter((event) => event.category !== 'missa');
+  const programacoesFiltradas = events.filter((event) => event.category === 'missa');
+  const eventosComInscricao = events.filter((event) => event.acceptsRegistration === true);
 
-  // Modal for Chapel Form
-  const ChapelFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Nova'} Capela</h3>
-          <button onClick={() => { setShowChapelForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Nome da capela"
-            value={chapelForm.name}
-            onChange={(e) => setChapelForm({ ...chapelForm, name: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Bairro"
-            value={chapelForm.neighborhood}
-            onChange={(e) => setChapelForm({ ...chapelForm, neighborhood: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="text"
-            placeholder="Coordenador"
-            value={chapelForm.coordinator}
-            onChange={(e) => setChapelForm({ ...chapelForm, coordinator: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="tel"
-            placeholder="Telefone"
-            value={chapelForm.phone || ''}
-            onChange={(e) => setChapelForm({ ...chapelForm, phone: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <input
-            type="email"
-            placeholder="E-mail"
-            value={chapelForm.email || ''}
-            onChange={(e) => setChapelForm({ ...chapelForm, email: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <button
-            onClick={handleSaveChapel}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
-          >
-            <Save className="w-5 h-5" />
-            <span>Salvar Capela</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Modal for Clergy Form
-  const ClergyFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-amber-900">{editingId ? 'Editar' : 'Adicionar'} Membro do Clero</h3>
-          <button onClick={() => { setShowCleryForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <label htmlFor="clergy-name" className="text-sm font-medium text-amber-900">Nome completo</label>
-            <input
-              id="clergy-name"
-              type="text"
-              placeholder="Ex: Pe. João Silva"
-              value={clergyForm.name}
-              onChange={(e) => setClergyForm({ ...clergyForm, name: e.target.value })}
-              autoComplete="name"
-              autoFocus
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="clergy-role" className="text-sm font-medium text-amber-900">Função</label>
-            <input
-              id="clergy-role"
-              type="text"
-              list="clergy-roles"
-              placeholder="Ex: Pároco, Vigário, Bispo, Papa"
-              value={clergyForm.role}
-              onChange={(e) => setClergyForm({ ...clergyForm, role: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-            <datalist id="clergy-roles">
-              <option value="Pároco" />
-              <option value="Sacerdote" />
-              <option value="Vigário Paroquial" />
-              <option value="Bispo" />
-              <option value="Papa" />
-              <option value="Diácono" />
-            </datalist>
-            <p className="text-xs text-gray-500">Escolha um cargo sugerido ou digite um novo.</p>
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="clergy-period-mode" className="text-sm font-medium text-amber-900">Período</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <select
-                id="clergy-period-mode"
-                value={clergyPeriodMode}
-                onChange={(e) => {
-                  const mode = e.target.value as 'atual' | 'numeros';
-                  setClergyPeriodMode(mode);
-                  updateClergyPeriod(mode, clergyPeriodStart, clergyPeriodEnd);
-                }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-              >
-                <option value="atual">Atual</option>
-                <option value="numeros">Somente números</option>
-              </select>
-              <input
-                id="clergy-period-start"
-                type="number"
-                inputMode="numeric"
-                min={1900}
-                max={2100}
-                placeholder="Início (ex: 2020)"
-                value={clergyPeriodStart}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setClergyPeriodStart(value);
-                  updateClergyPeriod(clergyPeriodMode, value, clergyPeriodEnd);
-                }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-              />
-              {clergyPeriodMode === 'numeros' ? (
-                <input
-                  id="clergy-period-end"
-                  type="number"
-                  inputMode="numeric"
-                  min={1900}
-                  max={2100}
-                  placeholder="Fim (ex: 2024)"
-                  value={clergyPeriodEnd}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setClergyPeriodEnd(value);
-                    updateClergyPeriod(clergyPeriodMode, clergyPeriodStart, value);
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value="Presente"
-                  disabled
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-                />
-              )}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="clergy-email" className="text-sm font-medium text-amber-900">E-mail (opcional)</label>
-            <input
-              id="clergy-email"
-              type="email"
-              placeholder="exemplo@paroquia.org"
-              value={clergyForm.email}
-              onChange={(e) => setClergyForm({ ...clergyForm, email: e.target.value })}
-              autoComplete="email"
-              inputMode="email"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="clergy-bio" className="text-sm font-medium text-amber-900">Biografia (opcional)</label>
-            <textarea
-              id="clergy-bio"
-              placeholder="Breve biografia"
-              value={clergyForm.bio || ''}
-              onChange={(e) => setClergyForm({ ...clergyForm, bio: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="clergy-image" className="text-sm font-medium text-amber-900">Imagem (URL)</label>
-            <input
-              id="clergy-image"
-              type="text"
-              placeholder="https://..."
-              value={clergyForm.imageUrl || ''}
-              onChange={(e) => setClergyForm({ ...clergyForm, imageUrl: e.target.value })}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-            {clergyForm.imageUrl && (
-              <div className="mt-2 rounded-lg border border-amber-100 bg-amber-50/40 p-2">
-                <p className="text-xs text-amber-800 mb-2">Pré-visualização</p>
-                <img
-                  src={clergyForm.imageUrl}
-                  alt="Pré-visualização"
-                  className="h-24 w-full object-cover rounded-md"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.src = 'https://via.placeholder.com/640x360?text=Imagem+inv%C3%A1lida';
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={Boolean(clergyForm.current)}
-              onChange={(e) => setClergyForm({ ...clergyForm, current: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <span className="text-gray-700">Atual</span>
-          </label>
-          <div className="space-y-1">
-            <label htmlFor="clergy-phone" className="text-sm font-medium text-amber-900">Telefone (opcional)</label>
-            <input
-              id="clergy-phone"
-              type="tel"
-              placeholder="(00) 00000-0000"
-              value={clergyForm.phone}
-              onChange={(e) => setClergyForm({ ...clergyForm, phone: e.target.value })}
-              autoComplete="tel"
-              inputMode="tel"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            />
-          </div>
-          {!isClergyFormValid && (
-            <p className="text-xs text-amber-700">Preencha nome, função e período para salvar.</p>
-          )}
-          <button
-            onClick={handleSaveCLergy}
-            disabled={!isClergyFormValid}
-            className={`w-full flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl font-semibold transition-all ${
-              isClergyFormValid
-                ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white'
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            <Save className="w-5 h-5" />
-            <span>Salvar Membro</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Modal for Guide Form
-  const GuideFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Guia</h3>
-          <button onClick={() => { setShowGuideForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Título do guia"
-            value={guideForm.title}
-            onChange={(e) => setGuideForm({ ...guideForm, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <textarea
-            placeholder="Resumo do guia (aparece no card)"
-            value={guideForm.content}
-            onChange={(e) => setGuideForm({ ...guideForm, content: e.target.value })}
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <textarea
-            placeholder="Detalhes (um por linha)"
-            value={guideForm.details.join('\n')}
-            onChange={(e) => setGuideForm({ ...guideForm, details: e.target.value.split('\n').filter(d => d.trim()) })}
-            rows={5}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <button
-            onClick={handleSaveGuide}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
-          >
-            <Save className="w-5 h-5" />
-            <span>Salvar Guia</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const ContentFormModal = () => (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Texto Institucional</h3>
-          <button onClick={() => { setShowContentForm(false); setEditingId(null); }} className="text-gray-400 hover:text-gray-600">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Chave única (ex: about, mission)"
-            value={contentForm.key}
-            onChange={(e) => setContentForm({ ...contentForm, key: e.target.value })}
-            disabled={!!editingId}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none disabled:bg-gray-100"
-          />
-          <input
-            type="text"
-            placeholder="Título"
-            value={contentForm.title}
-            onChange={(e) => setContentForm({ ...contentForm, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <textarea
-            placeholder="Conteúdo"
-            value={contentForm.content}
-            onChange={(e) => setContentForm({ ...contentForm, content: e.target.value })}
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-          />
-          <button
-            onClick={handleSaveContent}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
-          >
-            <Save className="w-5 h-5" />
-            <span>Salvar Texto</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-  
   return (
     <section className="min-h-screen bg-gradient-to-b from-amber-50/30 to-white pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -878,6 +1170,28 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             >
               <Calendar className="w-5 h-5" />
               <span>Eventos</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('programacoes')}
+              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'programacoes'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-amber-50'
+              }`}
+            >
+              <Calendar className="w-5 h-5" />
+              <span>Programações</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('inscricoes-eventos')}
+              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'inscricoes-eventos'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-amber-50'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>Inscrições de Eventos</span>
             </button>
             <button
               onClick={() => setActiveTab('paroquia')}
@@ -930,58 +1244,258 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             {/* Eventos Tab */}
             {activeTab === 'eventos' && (
               <div>
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Eventos</h2>
+                </div>
+
+                <div className="space-y-8">
+                  {Object.entries(groupEventsByMonth(eventosFiltrados)).map(([monthKey, monthEvents]) => {
+                    const date = new Date(`${monthKey.substring(0, 4)}-${monthKey.substring(5, 7)}-01`);
+                    const monthYear = date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).slice(1);
+                    
+                    return (
+                      <div key={monthKey}>
+                        <h3 className="text-xl font-bold text-amber-900 mb-4 pb-3 border-b-2 border-amber-200 capitalize">
+                          {monthYear}
+                        </h3>
+                        <div className="space-y-4">
+                          {monthEvents.map((event) => (
+                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-xl font-bold text-amber-900">{event.title}</h3>
+                                    {event.published && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <Eye className="w-3 h-3 mr-1" />
+                                        Publicado
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <span className="flex items-center">
+                                      <Calendar className="w-4 h-4 mr-2 text-amber-600" />
+                                      {event.date}
+                                    </span>
+                                    <span className="flex items-center">
+                                      <MapPin className="w-4 h-4 mr-2 text-amber-600" />
+                                      {event.location}
+                                    </span>
+                                    <span className="flex items-center text-amber-700 font-medium">
+                                      <Clock className="w-4 h-4 mr-2" />
+                                      {formatTime(event.time)}
+                                    </span>
+                                    <span className={`flex items-center font-medium ${event.acceptsRegistration ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {event.acceptsRegistration ? (
+                                        <>
+                                          <CheckCircle className="w-4 h-4 mr-2" />
+                                          Aceita Inscrições
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Clock className="w-4 h-4 mr-2" />
+                                          Sem Inscrições
+                                        </>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex space-x-2 ml-4">
+                                  <button
+                                    onClick={() => handleTogglePublish(event)}
+                                    title={event.published ? 'Despublicar' : 'Publicar'}
+                                    className={`p-3 rounded-lg transition-all ${event.published ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                                  >
+                                    {event.published ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                  </button>
+                                  <button onClick={() => handleEditEvent(event)} className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
+                                    <Edit className="w-5 h-5" />
+                                  </button>
+                                  <button onClick={() => handleDeleteEvent(event.id)} className="p-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all">
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Programações Tab */}
+            {activeTab === 'programacoes' && (
+              <div>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-amber-900">Gestão de Programações</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'missa', acceptsRegistration: false }); setEditingId(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
-                    <span>Novo Evento</span>
+                    <span>Nova Programação</span>
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  {events.map((event) => (
-                    <div key={event.id} className="bg-gradient-to-br from-white to-amber-50/30 border-2 border-amber-100 rounded-xl p-6 hover:shadow-lg transition-all">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-amber-900 mb-2">{event.title}</h3>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                            <span className="flex items-center">
-                              <Calendar className="w-4 h-4 mr-2 text-amber-600" />
-                              {event.date}
-                            </span>
-                            <span className="flex items-center">
-                              <MapPin className="w-4 h-4 mr-2 text-amber-600" />
-                              {event.location}
-                            </span>
-                            <span className={`flex items-center font-medium ${event.acceptsRegistration ? 'text-green-600' : 'text-gray-500'}`}>
-                              {event.acceptsRegistration ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                  Aceita Inscrições
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="w-4 h-4 mr-2" />
-                                  Sem Inscrições
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex space-x-2 ml-4">
-                          <button onClick={() => handleEditEvent(event)} className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button onClick={() => handleDeleteEvent(event.id)} className="p-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all">
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                <div className="space-y-8">
+                  {Object.entries(groupEventsByMonth(programacoesFiltradas)).map(([monthKey, monthEvents]) => {
+                    const date = new Date(`${monthKey.substring(0, 4)}-${monthKey.substring(5, 7)}-01`);
+                    const monthYear = date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).slice(1);
+
+                    return (
+                      <div key={monthKey}>
+                        <h3 className="text-xl font-bold text-amber-900 mb-4 pb-3 border-b-2 border-amber-200 capitalize">
+                          {monthYear}
+                        </h3>
+                        <div className="space-y-4">
+                          {monthEvents.map((event) => (
+                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-xl font-bold text-amber-900">{event.title}</h3>
+                                    {event.published && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <Eye className="w-3 h-3 mr-1" />
+                                        Publicado
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <span className="flex items-center">
+                                      <Calendar className="w-4 h-4 mr-2 text-amber-600" />
+                                      {event.date}
+                                    </span>
+                                    <span className="flex items-center">
+                                      <MapPin className="w-4 h-4 mr-2 text-amber-600" />
+                                      {event.location}
+                                    </span>
+                                    <span className="flex items-center text-amber-700 font-medium">
+                                      <Clock className="w-4 h-4 mr-2" />
+                                      {formatTime(event.time)}
+                                    </span>
+                                  </div>
+                                  {event.description && (
+                                    <p className="text-gray-600 mt-2">{event.description}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2 ml-4">
+                                  <button
+                                    onClick={() => handleTogglePublish(event)}
+                                    title={event.published ? 'Despublicar' : 'Publicar'}
+                                    className={`p-3 rounded-lg transition-all ${event.published ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                                  >
+                                    {event.published ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                  </button>
+                                  <button
+                                    onClick={() => handleEditEvent(event)}
+                                    className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
+                                  >
+                                    <Edit className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    className="p-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Inscrições de Eventos Tab */}
+            {activeTab === 'inscricoes-eventos' && (
+              <div>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-bold text-amber-900">Gestão de Inscrições de Eventos</h2>
+                  <button
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null }); setEditingId(null); setShowEventForm(true); }}
+                    className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Novo Evento com Inscrição</span>
+                  </button>
+                </div>
+
+                <div className="space-y-8">
+                  {Object.entries(groupEventsByMonth(eventosComInscricao)).map(([monthKey, monthEvents]) => {
+                    const date = new Date(`${monthKey.substring(0, 4)}-${monthKey.substring(5, 7)}-01`);
+                    const monthYear = date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).charAt(0).toUpperCase() + date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' }).slice(1);
+
+                    return (
+                      <div key={monthKey}>
+                        <h3 className="text-xl font-bold text-amber-900 mb-4 pb-3 border-b-2 border-amber-200 capitalize">
+                          {monthYear}
+                        </h3>
+                        <div className="space-y-4">
+                          {monthEvents.map((event) => (
+                            <div key={event.id} className={`bg-gradient-to-br from-blue-50/50 to-blue-50/30 border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-xl font-bold text-blue-900">{event.title}</h3>
+                                    {event.maxParticipants && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <Users className="w-3 h-3 mr-1" />
+                                        Capacidade: {event.maxParticipants}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                                    <span className="flex items-center">
+                                      <Calendar className="w-4 h-4 mr-2 text-blue-600" />
+                                      {event.date}
+                                    </span>
+                                    <span className="flex items-center">
+                                      <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                                      {event.location}
+                                    </span>
+                                    <span className="flex items-center text-blue-700 font-medium">
+                                      <Clock className="w-4 h-4 mr-2" />
+                                      {formatTime(event.time)}
+                                    </span>
+                                  </div>
+                                  {event.description && (
+                                    <p className="text-gray-600 mt-2">{event.description}</p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2 ml-4">
+                                  <button
+                                    onClick={() => handleEditEvent(event)}
+                                    className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
+                                  >
+                                    <Edit className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    className="p-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all"
+                                  >
+                                    <Trash2 className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {eventosComInscricao.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 text-lg">Nenhum evento com inscrição cadastrado</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
@@ -1203,11 +1717,79 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       </div>
 
       {/* Modals */}
-      {showEventForm && <EventFormModal />}
-      {showChapelForm && <ChapelFormModal />}
-      {showCleryForm && <ClergyFormModal />}
-      {showGuideForm && <GuideFormModal />}
-      {showContentForm && <ContentFormModal />}
+      {showEventForm && (
+        <EventFormModal
+          editingId={editingId}
+          eventForm={eventForm}
+          onClose={() => { setShowEventForm(false); setEditingId(null); }}
+          onSave={handleSaveEvent}
+          onTitleChange={handleEventTitleChange}
+          onDateChange={handleEventDateChange}
+          onTimeChange={handleEventTimeChange}
+          onLocationChange={handleEventLocationChange}
+          onCategoryChange={handleEventCategoryChange}
+          onDescriptionChange={handleEventDescriptionChange}
+          onRegistrationChange={handleEventRegistrationChange}
+          onMaxParticipantsChange={handleEventMaxParticipantsChange}
+        />
+      )}
+      {showChapelForm && (
+        <ChapelFormModal
+          editingId={editingId}
+          chapelForm={chapelForm}
+          onClose={() => { setShowChapelForm(false); setEditingId(null); }}
+          onSave={handleSaveChapel}
+          onNameChange={handleChapelNameChange}
+          onNeighborhoodChange={handleChapelNeighborhoodChange}
+          onCoordinatorChange={handleChapelCoordinatorChange}
+          onPhoneChange={handleChapelPhoneChange}
+          onEmailChange={handleChapelEmailChange}
+        />
+      )}
+      {showCleryForm && (
+        <ClergyFormModal
+          editingId={editingId}
+          clergyForm={clergyForm}
+          clergyPeriodMode={clergyPeriodMode}
+          clergyPeriodStart={clergyPeriodStart}
+          clergyPeriodEnd={clergyPeriodEnd}
+          isClergyFormValid={isClergyFormValid}
+          onClose={() => { setShowCleryForm(false); setEditingId(null); }}
+          onSave={handleSaveCLergy}
+          onNameChange={handleClergyNameChange}
+          onRoleChange={handleClergyRoleChange}
+          onPeriodModeChange={handleClergyPeriodModeChange}
+          onPeriodStartChange={handleClergyPeriodStartChange}
+          onPeriodEndChange={handleClergyPeriodEndChange}
+          onEmailChange={handleClergyEmailChange}
+          onBioChange={handleClergyBioChange}
+          onImageChange={handleClergyImageChange}
+          onCurrentChange={handleClergyCurrentChange}
+          onPhoneChange={handleClergyPhoneChange}
+        />
+      )}
+      {showGuideForm && (
+        <GuideFormModal
+          editingId={editingId}
+          guideForm={guideForm}
+          onClose={() => { setShowGuideForm(false); setEditingId(null); }}
+          onSave={handleSaveGuide}
+          onTitleChange={handleGuideTitleChange}
+          onContentChange={handleGuideContentChange}
+          onDetailsChange={handleGuideDetailsChange}
+        />
+      )}
+      {showContentForm && (
+        <ContentFormModal
+          editingId={editingId}
+          contentForm={contentForm}
+          onClose={() => { setShowContentForm(false); setEditingId(null); }}
+          onSave={handleSaveContent}
+          onKeyChange={handleContentKeyChange}
+          onTitleChange={handleContentTitleChange}
+          onContentChange={handleContentContentChange}
+        />
+      )}
     </section>
   );
 }

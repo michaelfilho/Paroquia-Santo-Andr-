@@ -178,6 +178,18 @@ export function Clergy() {
   const priests = clergyMembers.filter(m => m.role === 'Sacerdote' || m.role === 'Pároco');
   const vicars = clergyMembers.filter(m => m.role === 'Vigário Paroquial');
 
+  if (loading) {
+    return (
+      <section id="clero" className="py-24 bg-gradient-to-b from-white to-amber-50/30">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <p className="text-gray-500">Carregando...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="clero" className="py-24 bg-gradient-to-b from-white to-amber-50/30">
       <div className="max-w-7xl mx-auto px-4">

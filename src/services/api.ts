@@ -67,10 +67,35 @@ export const authAPI = {
   },
 };
 
+// Public Events API
+export const publicEventsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/public/events`);
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar eventos');
+    }
+    
+    return response.json();
+  },
+};
+
 // Events endpoints
 export const eventsAPI = {
   getAll: async () => {
     const response = await fetch(`${API_BASE_URL}/events`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar eventos');
+    }
+    
+    return response.json();
+  },
+
+  getAllWithCounts: async () => {
+    const response = await fetch(`${API_BASE_URL}/events/public/with-counts`, {
       headers: getAuthHeaders(),
     });
     

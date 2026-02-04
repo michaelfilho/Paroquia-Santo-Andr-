@@ -1,4 +1,6 @@
 const { Event, Chapel, ClergyMember, Guide, ContentText } = require('../models');
+const { Admin } = require('../models');
+const bcrypt = require('bcryptjs');
 
 const defaultClergy = [
   {
@@ -293,13 +295,22 @@ const defaultEvents = [
 ];
 
 const seedDefaultContent = async () => {
-  const [eventCount, chapelCount, clergyCount, guideCount, contentCount] = await Promise.all([
+  const [eventCount, chapelCount, clergyCount, guideCount, contentCount, adminCount] = await Promise.all([
     Event.count(),
     Chapel.count(),
     ClergyMember.count(),
     Guide.count(),
     ContentText.count(),
+    Admin.count(),
   ]);
+
+  if (adminCount === 0) {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    await Admin.create({
+      username: 'admin',
+      password: hashedPassword,
+    });
+  }
 
   if (chapelCount === 0) {
     await Chapel.bulkCreate(defaultChapels);

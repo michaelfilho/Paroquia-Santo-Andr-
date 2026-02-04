@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Info, ChevronDown } from 'lucide-react';
-import { eventsAPI } from '../src/services/api';
+import { publicEventsAPI } from '../src/services/api';
 
 interface FutureEvent {
   id: string | number;
@@ -11,6 +11,9 @@ interface FutureEvent {
   location: string;
   description: string;
   category: 'missa' | 'evento' | 'retiro' | 'festa';
+  acceptsRegistration?: boolean;
+  maxParticipants?: number | null;
+  confirmedInscriptions?: number;
 }
 
 export function FutureEvents() {
@@ -23,7 +26,7 @@ export function FutureEvents() {
 
   const loadFutureEvents = async () => {
     try {
-      const data = await eventsAPI.getAll();
+      const data = await publicEventsAPI.getAll();
       
       if (data && data.length > 0) {
         // Filtrar apenas eventos futuros
@@ -46,7 +49,8 @@ export function FutureEvents() {
               ...event,
               month: monthYear.charAt(0).toUpperCase() + monthYear.slice(1),
               date: formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1),
-              category: event.category || 'evento'
+              category: event.category || 'evento',
+              confirmedInscriptions: event.confirmedInscriptions || 0,
             };
           })
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -258,6 +262,13 @@ export function FutureEvents() {
                         {event.location}
                       </div>
                     </div>
+                    {event.acceptsRegistration && event.maxParticipants && (
+                      <div className="mt-4 pt-4 border-t border-amber-200">
+                        <p className="text-sm font-semibold text-amber-900">
+                          Inscritos: <span className="text-lg text-amber-700">{event.confirmedInscriptions || 0}/{event.maxParticipants}</span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
