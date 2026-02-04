@@ -56,11 +56,7 @@ export default function App() {
   // Render Admin Dashboard
   if (currentPage === 'admin-dashboard' && isAuthenticated) {
     return (
-      <>
-        <Header onNavigate={handleNavigate} currentPage={currentPage} />
-        <AdminDashboard onLogout={handleLogout} />
-        <Footer />
-      </>
+      <AdminDashboard onLogout={handleLogout} />
     );
   }
 
