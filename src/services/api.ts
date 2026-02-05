@@ -78,6 +78,17 @@ export const publicEventsAPI = {
     
     return response.json();
   },
+  
+  // Eventos de inscrição - SOMENTE eventos criados na aba Inscrições
+  getInscriptionEvents: async () => {
+    const response = await fetch(`${API_BASE_URL}/public/inscription-events`);
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar eventos de inscrição');
+    }
+    
+    return response.json();
+  },
 };
 
 // Events endpoints
@@ -473,14 +484,17 @@ export const inscriptionsAPI = {
   },
 
   create: async (inscriptionData: any) => {
-    const response = await fetch(`${API_BASE_URL}/inscriptions`, {
+    const response = await fetch(`${API_BASE_URL}/public/inscriptions`, {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(inscriptionData),
     });
     
     if (!response.ok) {
-      throw new Error('Erro ao criar inscrição');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Erro ao criar inscrição');
     }
     
     return response.json();

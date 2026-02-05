@@ -22,7 +22,7 @@ const Inscription = sequelize.define('Inscription', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   phone: {
     type: DataTypes.STRING,

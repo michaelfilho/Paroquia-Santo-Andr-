@@ -15,6 +15,10 @@ const Event = sequelize.define('Event', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  dateEnd: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   time: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -46,6 +50,10 @@ const Event = sequelize.define('Event', {
   isProgram: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+  },
+  isInscriptionEvent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   maxParticipants: {
     type: DataTypes.INTEGER,

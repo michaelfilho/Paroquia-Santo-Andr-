@@ -65,8 +65,8 @@ router.post('/', async (req, res) => {
   try {
     const { eventId, name, email, phone } = req.body;
 
-    if (!eventId || !name || !email || !phone) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
+    if (!eventId || !name || !phone) {
+      return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
     }
 
     // Verify if event exists
@@ -77,6 +77,24 @@ router.post('/', async (req, res) => {
 
     if (!event.acceptsRegistration) {
       return res.status(400).json({ message: 'Este evento não aceita inscrições' });
+    }
+
+    // VALIDAÇÃO DE LIMITE DE VAGAS
+    if (event.maxParticipants && event.maxParticipants > 0) {
+      const confirmedCount = await Inscription.count({
+        where: { 
+          eventId: eventId, 
+          status: 'Confirmado' 
+        }
+      });
+
+      if (confirmedCount >= event.maxParticipants) {
+        return res.status(400).json({ 
+          message: 'Vagas esgotadas para este evento',
+          availableSpots: 0,
+          totalSpots: event.maxParticipants
+        });
+      }
     }
 
     const inscription = await Inscription.create({

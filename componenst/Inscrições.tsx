@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, X } from 'lucide-react';
-import { eventsAPI, inscriptionsAPI } from '../src/services/api';
+import { publicEventsAPI, inscriptionsAPI } from '../src/services/api';
 
 interface Event {
   id: string;
@@ -19,7 +19,6 @@ interface FormData {
   name: string;
   cpf: string;
   phone: string;
-  email: string;
   observations: string;
 }
 
@@ -28,11 +27,11 @@ export function Inscricoes() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
+  const [acceptedLGPD, setAcceptedLGPD] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     cpf: '',
     phone: '',
-    email: '',
     observations: '',
   });
 
@@ -44,7 +43,8 @@ export function Inscricoes() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const data = await eventsAPI.getAll();
+      // Usar endpoint específico para eventos de inscrição
+      const data = await publicEventsAPI.getInscriptionEvents();
       
       // Format events for display
       const formattedEvents = data.map((event: any) => ({
@@ -55,13 +55,13 @@ export function Inscricoes() {
           month: 'long', 
           day: 'numeric' 
         }) : 'Data não definida',
-        time: '18:00', // Backend não tem horário específico
+        time: event.time || 'Horário não definido',
         location: event.location || 'Local não definido',
         description: event.description || 'Sem descrição',
-        category: 'Evento',
-        availableSpots: event.acceptsRegistration ? 20 : 0,
-        totalSpots: 20,
-        status: event.acceptsRegistration ? 'open' : 'closed',
+        category: event.category || 'Evento',
+        availableSpots: event.availableSpots !== null ? event.availableSpots : 0,
+        totalSpots: event.maxParticipants || 0,
+        status: event.status || 'closed',
       }));
       
       setEvents(formattedEvents);
@@ -77,6 +77,12 @@ export function Inscricoes() {
     try {
       setLoading(true);
       
+      if (!acceptedLGPD) {
+        alert('Você deve aceitar os termos de proteção de dados (LGPD) para continuar');
+        setLoading(false);
+        return;
+      }
+
       if (!selectedEvent) {
         alert('Nenhum evento selecionado');
         return;
@@ -86,26 +92,36 @@ export function Inscricoes() {
       await inscriptionsAPI.create({
         eventId: selectedEvent.id,
         name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+        phone: formData.phone.replace(/\D/g, ''), // Remove formatação e envia apenas números
       });
 
       setShowSuccess(true);
       setSelectedEvent(null);
+      setAcceptedLGPD(false);
       setFormData({
         name: '',
         cpf: '',
         phone: '',
-        email: '',
         observations: '',
       });
+      
+      // Recarregar eventos para atualizar vagas
+      await loadEvents();
       
       setTimeout(() => {
         setShowSuccess(false);
       }, 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar inscrição:', error);
-      alert('Erro ao enviar inscrição. Tente novamente.');
+      
+      // Verificar se é erro de vagas esgotadas
+      if (error.response?.data?.message?.includes('Vagas esgotadas') || 
+          error.response?.data?.message?.includes('esgotadas')) {
+        alert('Desculpe, as vagas para este evento já foram esgotadas!');
+        await loadEvents(); // Atualizar lista
+      } else {
+        alert('Erro ao enviar inscrição. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -270,14 +286,35 @@ export function Inscricoes() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  CPF (opcional)
+                  CPF *
                 </label>
                 <input
                   type="text"
+                  required
                   value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                  onChange={(e) => {
+                    // Remove all non-numeric characters
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    // Limit to 11 digits
+                    value = value.slice(0, 11);
+                    
+                    // Format as XXX.XXX.XXX-XX
+                    if (value.length <= 3) {
+                      value = value;
+                    } else if (value.length <= 6) {
+                      value = value.slice(0, 3) + '.' + value.slice(3);
+                    } else if (value.length <= 9) {
+                      value = value.slice(0, 3) + '.' + value.slice(3, 6) + '.' + value.slice(6);
+                    } else {
+                      value = value.slice(0, 3) + '.' + value.slice(3, 6) + '.' + value.slice(6, 9) + '-' + value.slice(9);
+                    }
+                    
+                    setFormData({ ...formData, cpf: value });
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-600 focus:outline-none transition-colors"
                   placeholder="000.000.000-00"
+                  maxLength={14}
                 />
               </div>
 
@@ -286,31 +323,32 @@ export function Inscricoes() {
                   Telefone *
                 </label>
                 <input
-                  type="number"
+                  type="tel"
                   required
                   value={formData.phone}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    // Remove all non-numeric characters
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    // Limit to 11 digits (DDD + 9 digits)
+                    value = value.slice(0, 11);
+                    
+                    // Format as (XX) XXXXX-XXXX or (XX) XXXX-XXXX
+                    if (value.length <= 2) {
+                      value = value;
+                    } else if (value.length <= 7) {
+                      value = '(' + value.slice(0, 2) + ') ' + value.slice(2);
+                    } else if (value.length <= 10) {
+                      value = '(' + value.slice(0, 2) + ') ' + value.slice(2, 6) + '-' + value.slice(6);
+                    } else {
+                      value = '(' + value.slice(0, 2) + ') ' + value.slice(2, 7) + '-' + value.slice(7);
+                    }
+                    
                     setFormData({ ...formData, phone: value });
                   }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-600 focus:outline-none transition-colors"
-                  placeholder="14999999999"
-                  maxLength={11}
-                  min="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  E-mail *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-600 focus:outline-none transition-colors"
-                  placeholder="seu@email.com"
+                  placeholder="(14) 99999-9999"
+                  maxLength={15}
                 />
               </div>
 
@@ -339,19 +377,46 @@ export function Inscricoes() {
                 />
               </div>
 
+              {/* LGPD Compliance Checkbox */}
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <div className="flex items-start space-x-3">
+                  <input
+                    type="checkbox"
+                    id="lgpd-consent"
+                    checked={acceptedLGPD}
+                    onChange={(e) => setAcceptedLGPD(e.target.checked)}
+                    className="w-5 h-5 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="lgpd-consent" className="text-sm text-gray-700 leading-relaxed cursor-pointer">
+                    <span className="font-semibold">Concordo com os termos de proteção de dados (LGPD)</span>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Autorizo a coleta e processamento dos meus dados pessoais (nome, telefone e e-mail) exclusivamente para fins de contato relacionado ao evento em que me inscrevo, de acordo com a Lei Geral de Proteção de Dados (LGPD). Meus dados serão armazenados com segurança e não serão compartilhados com terceiros sem consentimento.
+                    </p>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => setSelectedEvent(null)}
+                  onClick={() => {
+                    setSelectedEvent(null);
+                    setAcceptedLGPD(false);
+                  }}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-4 rounded-xl font-semibold transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                  disabled={!acceptedLGPD || loading}
+                  className={`flex-1 px-6 py-4 rounded-xl font-semibold transition-all shadow-lg ${
+                    acceptedLGPD && !loading
+                      ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white hover:shadow-xl'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
                 >
-                  Enviar Inscrição
+                  {loading ? 'Enviando...' : 'Enviar Inscrição'}
                 </button>
               </div>
             </form>

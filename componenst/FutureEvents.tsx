@@ -40,7 +40,7 @@ export function FutureEvents() {
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
-            const monthYear = eventDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            const monthYear = eventDate.toLocaleDateString('pt-BR', { month: 'long' });
             const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
               day: 'numeric', 
               month: 'long', 
