@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { MapPin, User, Phone, Mail } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { chapelsAPI } from '../src/services/api';
 
 interface Chapel {
   id: string | number;
   name: string;
   neighborhood: string;
+  address?: string;
   coordinator: string;
   phone: string;
   email: string;
@@ -151,68 +152,52 @@ export function Map() {
             <div className="absolute top-2 left-2 md:top-6 md:left-6 bg-white/95 backdrop-blur-sm px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl shadow-lg border border-amber-200 z-10">
               <p className="font-bold text-amber-900 text-sm md:text-lg">Tarumã - SP</p>
             </div>
-
-            {/* Legend */}
-            <div className="absolute bottom-2 right-2 md:bottom-6 md:right-6 bg-white/95 backdrop-blur-sm p-2 md:p-4 rounded-lg md:rounded-xl shadow-lg border border-amber-200 z-10">
-              <div className="flex items-center space-x-1 md:space-x-2 mb-2 md:mb-3">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-amber-700 rounded-full ring-2 md:ring-3 ring-amber-300 shadow-md" />
-                <span className="text-xs md:text-sm font-semibold text-gray-700">Igreja Matriz</span>
-              </div>
-              <div className="flex items-center space-x-1 md:space-x-2">
-                <div className="w-4 h-4 md:w-5 md:h-5 bg-amber-500 rounded-full ring-2 md:ring-3 ring-amber-200 shadow-md" />
-                <span className="text-xs md:text-sm font-semibold text-gray-700">Capelas</span>
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Coordinators Information */}
+        {/* Capelas e bairros */}
         <div>
-          <h3 className="text-3xl font-bold text-amber-900 mb-12 text-center">
-            Coordenadores das Capelas
+          <h3 className="text-2xl md:text-3xl font-bold text-amber-900 mb-8 text-center">
+            Capelas e Bairros
           </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7">
             {chapels.map((chapel) => (
               <div
                 key={chapel.id}
-                className="group bg-white rounded-2xl shadow-lg p-8 border-l-4 border-amber-600 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+                className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-amber-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="flex items-start space-x-4 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-md">
-                    <MapPin className="w-6 h-6 text-amber-700" />
+                <div className="flex items-start gap-4">
+                  <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
+                    <MapPin className="w-5 h-5 text-amber-700" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-amber-900 text-lg mb-1 group-hover:text-amber-700 transition-colors">
-                      {chapel.name}
-                    </h4>
-                    <p className="text-gray-600 text-sm font-medium">{chapel.neighborhood}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3 pt-4 border-t-2 border-gray-100">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <User className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <span className="text-gray-700 font-semibold">{chapel.coordinator}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 text-sm">
-                    <Phone className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <a 
-                      href={`tel:${chapel.phone.replace(/\D/g, '')}`}
-                      className="text-gray-700 hover:text-amber-700 transition-colors font-medium"
-                    >
-                      {chapel.phone}
-                    </a>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3 text-sm">
-                    <Mail className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <a 
-                      href={`mailto:${chapel.email}`}
-                      className="text-gray-700 hover:text-amber-700 transition-colors truncate font-medium"
-                    >
-                      {chapel.email}
-                    </a>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h4 className="font-bold text-amber-900 text-lg leading-snug group-hover:text-amber-700 transition-colors">
+                        {chapel.name}
+                      </h4>
+                      <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full whitespace-nowrap">
+                        {chapel.neighborhood}
+                      </span>
+                    </div>
+
+                    {chapel.address && (
+                      <p className="text-gray-600 text-sm mt-2">
+                        {chapel.address}
+                      </p>
+                    )}
+
+                    <div className="mt-4 pt-3 border-t border-amber-100 space-y-1.5 text-sm text-gray-700">
+                      {chapel.coordinator && (
+                        <p>
+                          <span className="font-semibold text-amber-900">Coordenador:</span> {chapel.coordinator}
+                        </p>
+                      )}
+                      {chapel.phone && (
+                        <p>
+                          <span className="font-semibold text-amber-900">Telefone:</span> {chapel.phone}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

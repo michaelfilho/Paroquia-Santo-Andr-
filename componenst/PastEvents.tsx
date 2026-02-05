@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   Calendar,
   MapPin,
-  Users,
   Image as ImageIcon,
   ChevronDown
 } from 'lucide-react';

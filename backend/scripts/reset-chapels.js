@@ -5,6 +5,7 @@ const chapels = [
   {
     name: 'Igreja Matriz Santo André',
     neighborhood: 'Centro',
+    address: 'Rua da Matriz, 100',
     coordinator: 'Padre João Carlos Silva',
     phone: '(14) 3234-5678',
     email: 'matriz@paroquiasantoandre.org.br',
@@ -13,6 +14,7 @@ const chapels = [
   {
     name: 'Capela São José Operário',
     neighborhood: 'Vila dos Lagos',
+    address: 'Rua das Palmeiras, 245',
     coordinator: 'Maria Aparecida Santos',
     phone: '(14) 3234-5680',
     email: 'saojoseoperario@paroquiasantoandre.org.br',
@@ -21,6 +23,7 @@ const chapels = [
   {
     name: 'Capela Santa Terezinha',
     neighborhood: 'Árvores',
+    address: 'Rua dos Lírios, 88',
     coordinator: 'José Fernando Lima',
     phone: '(14) 3234-5681',
     email: 'santaterezinha@paroquiasantoandre.org.br',
@@ -29,6 +32,7 @@ const chapels = [
   {
     name: 'Capela Nossa Senhora das Graças',
     neighborhood: 'Vila Dourados',
+    address: 'Rua do Dourado, 310',
     coordinator: 'Ana Paula Rodrigues',
     phone: '(14) 3234-5682',
     email: 'nossasenhoragracas@paroquiasantoandre.org.br',
@@ -37,6 +41,7 @@ const chapels = [
   {
     name: 'Capela Santa Paulina',
     neighborhood: 'Vila Brasil',
+    address: 'Rua Brasil, 520',
     coordinator: 'Carlos Eduardo Ferreira',
     phone: '(14) 3234-5683',
     email: 'santapaulina@paroquiasantoandre.org.br',
@@ -45,6 +50,7 @@ const chapels = [
   {
     name: 'Capela Sagrada Família',
     neighborhood: 'Vila Cristal',
+    address: 'Rua Cristal, 145',
     coordinator: 'Mariana Costa Oliveira',
     phone: '(14) 3234-5684',
     email: 'sagradafamilia@paroquiasantoandre.org.br',

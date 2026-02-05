@@ -1,8 +1,8 @@
 import { ImageWithFallback } from './figma/image';
-import igrejaImage from '../Styles/img/igreja.jpeg';
+import churchBg from '../Styles/img/igreja.jpeg';
 
 export function Hero() {
-  const churchImage = igrejaImage;
+  const churchImage = churchBg;
 
   return (
     <section id="inicio" className="relative h-screen flex items-center justify-center overflow-hidden">

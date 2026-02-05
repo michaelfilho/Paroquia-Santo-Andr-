@@ -60,6 +60,8 @@ interface Chapel {
   id: string;
   name: string;
   neighborhood: string;
+  address?: string;
+  number?: string;
   coordinator: string;
   phone?: string;
   email?: string;
@@ -367,6 +369,8 @@ interface ChapelFormModalProps {
   onSave: () => void;
   onNameChange: (value: string) => void;
   onNeighborhoodChange: (value: string) => void;
+  onAddressChange: (value: string) => void;
+  onNumberChange: (value: string) => void;
   onCoordinatorChange: (value: string) => void;
   onPhoneChange: (value: string) => void;
   onEmailChange: (value: string) => void;
@@ -379,6 +383,8 @@ const ChapelFormModal = ({
   onSave,
   onNameChange,
   onNeighborhoodChange,
+  onAddressChange,
+  onNumberChange,
   onCoordinatorChange,
   onPhoneChange,
   onEmailChange,
@@ -406,6 +412,22 @@ const ChapelFormModal = ({
           onChange={(e) => onNeighborhoodChange(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            placeholder="Rua"
+            value={chapelForm.address || ''}
+            onChange={(e) => onAddressChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+          <input
+            type="text"
+            placeholder="Número"
+            value={chapelForm.number || ''}
+            onChange={(e) => onNumberChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
         
         {/* Seção de dados do coordenador */}
         <div className="border-t border-amber-200 pt-4 mt-4">
@@ -859,7 +881,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     category: 'evento',
     acceptsRegistration: true,
   });
-  const [chapelForm, setChapelForm] = useState<Chapel>({ id: '', name: '', neighborhood: '', coordinator: '', phone: '', email: '' });
+  const [chapelForm, setChapelForm] = useState<Chapel>({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '' });
   const [clergyForm, setClergyForm] = useState<ClergyMember>({ id: '', name: '', role: '', period: '', bio: '', imageUrl: '', current: false, email: '', phone: '' });
   const [guideForm, setGuideForm] = useState<Guide>({ id: '', title: '', content: '', details: [] });
   const [contentForm, setContentForm] = useState<ContentText>({ id: '', key: '', title: '', content: '' });
@@ -944,6 +966,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
     const handleChapelNeighborhoodChange = (value: string) => {
       setChapelForm(prev => ({ ...prev, neighborhood: value }));
+    };
+
+    const handleChapelAddressChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, address: value }));
+    };
+
+    const handleChapelNumberChange = (value: string) => {
+      setChapelForm(prev => ({ ...prev, number: value }));
     };
 
     const handleChapelCoordinatorChange = (value: string) => {
@@ -1287,13 +1317,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleSaveChapel = async () => {
     try {
       setLoading(true);
+      const { number, ...rest } = chapelForm;
+      const address = [chapelForm.address, number].filter(Boolean).join(', ');
+      const chapelPayload = { ...rest, address };
       if (editingId) {
-        await chapelsAPI.update(editingId, chapelForm);
+        await chapelsAPI.update(editingId, chapelPayload);
       } else {
-        await chapelsAPI.create(chapelForm);
+        await chapelsAPI.create(chapelPayload);
       }
       await loadAllData();
-      setChapelForm({ id: '', name: '', neighborhood: '', coordinator: '', phone: '', email: '' });
+      setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '' });
       setShowChapelForm(false);
       setEditingId(null);
     } catch (error) {
@@ -1305,7 +1338,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const handleEditChapel = (chapel: Chapel) => {
-    setChapelForm(chapel);
+    const [streetPart, numberPart] = (chapel.address || '').split(',');
+    setChapelForm({
+      ...chapel,
+      address: streetPart?.trim() || '',
+      number: numberPart?.trim() || '',
+    });
     setEditingId(chapel.id);
     setShowChapelForm(true);
   };
@@ -1953,7 +1991,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-amber-900">Capelas</h2>
-                    <button onClick={() => { setChapelForm({ id: '', name: '', neighborhood: '', coordinator: '' }); setEditingId(null); setShowChapelForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:shadow-lg text-sm">
+                    <button onClick={() => { setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '' }); setEditingId(null); setShowChapelForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:shadow-lg text-sm">
                       <Plus className="w-4 h-4" />
                       <span>Nova Capela</span>
                     </button>
@@ -2306,6 +2344,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           onSave={handleSaveChapel}
           onNameChange={handleChapelNameChange}
           onNeighborhoodChange={handleChapelNeighborhoodChange}
+          onAddressChange={handleChapelAddressChange}
+          onNumberChange={handleChapelNumberChange}
           onCoordinatorChange={handleChapelCoordinatorChange}
           onPhoneChange={handleChapelPhoneChange}
           onEmailChange={handleChapelEmailChange}
