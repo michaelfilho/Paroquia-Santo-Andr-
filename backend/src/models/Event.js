@@ -39,6 +39,14 @@ const Event = sequelize.define('Event', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  isProgram: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
   maxParticipants: {
     type: DataTypes.INTEGER,
     allowNull: true,

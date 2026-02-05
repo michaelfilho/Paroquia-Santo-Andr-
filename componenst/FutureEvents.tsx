@@ -31,13 +31,15 @@ export function FutureEvents() {
       if (data && data.length > 0) {
         // Filtrar apenas eventos futuros
         const now = new Date();
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
         const futureEvents = data
           .filter((event: any) => {
-            const eventDate = new Date(event.date);
-            return eventDate >= now;
+            const eventDate = new Date(`${event.date}T00:00:00`);
+            return eventDate >= startOfToday;
           })
           .map((event: any) => {
-            const eventDate = new Date(event.date);
+            const eventDate = new Date(`${event.date}T00:00:00`);
             const monthYear = eventDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
               day: 'numeric', 
@@ -65,88 +67,7 @@ export function FutureEvents() {
     }
   };
 
-  const getDefaultEvents = (): FutureEvent[] => [
-    {
-      id: '1',
-      title: 'Missa Dominical',
-      date: '2 de Fevereiro de 2026',
-      month: 'Fevereiro 2026',
-      time: '19:00',
-      location: 'Igreja Matriz Santo André',
-      description: 'Missa de domingo com celebração eucarística e cânticos.',
-      category: 'missa',
-    },
-    {
-      id: '2',
-      title: 'Grupo de Oração',
-      date: '5 de Fevereiro de 2026',
-      month: 'Fevereiro 2026',
-      time: '20:00',
-      location: 'Salão Paroquial',
-      description: 'Encontro semanal do grupo de oração com louvor, palavra e partilha.',
-      category: 'evento',
-    },
-    {
-      id: '3',
-      title: 'Catequese Infantil',
-      date: '7 de Fevereiro de 2026',
-      month: 'Fevereiro 2026',
-      time: '14:00',
-      location: 'Salas de Catequese',
-      description: 'Aulas de catequese para crianças de 7 a 10 anos.',
-      category: 'evento',
-    },
-    {
-      id: '4',
-      title: 'Retiro de Quaresma',
-      date: '28 de Fevereiro a 2 de Março de 2026',
-      month: 'Fevereiro 2026',
-      time: '18:00 (Sexta)',
-      location: 'Casa de Retiros São Francisco',
-      description: 'Retiro espiritual de preparação para a Quaresma.',
-      category: 'retiro',
-    },
-    {
-      id: '5',
-      title: 'Quarta-feira de Cinzas',
-      date: '4 de Março de 2026',
-      month: 'Março 2026',
-      time: '07:00, 12:00 e 19:00',
-      location: 'Igreja Matriz',
-      description: 'Celebrações com imposição das cinzas.',
-      category: 'missa',
-    },
-    {
-      id: '6',
-      title: 'Encontro de Casais',
-      date: '14 e 15 de Março de 2026',
-      month: 'Março 2026',
-      time: '19:00 (Sábado)',
-      location: 'Salão Paroquial',
-      description: 'Encontro para casais com palestras e espiritualidade.',
-      category: 'evento',
-    },
-    {
-      id: '7',
-      title: 'Via Sacra',
-      date: 'Todas as sextas-feiras da Quaresma',
-      month: 'Março 2026',
-      time: '19:30',
-      location: 'Igreja Matriz',
-      description: 'Celebração semanal da Via Sacra.',
-      category: 'missa',
-    },
-    {
-      id: '8',
-      title: 'Páscoa 2026',
-      date: '5 de Abril de 2026',
-      month: 'Abril 2026',
-      time: '06:00 (Vigília)',
-      location: 'Igreja Matriz',
-      description: 'Vigília Pascal e Missa da Ressurreição.',
-      category: 'festa',
-    },
-  ];
+  const getDefaultEvents = (): FutureEvent[] => [];
 
   const groupedEvents = events.reduce((acc, event) => {
     acc[event.month] = acc[event.month] || [];

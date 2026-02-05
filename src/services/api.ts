@@ -158,6 +158,76 @@ export const eventsAPI = {
     
     return response.json();
   },
+
+  publish: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/events/${id}/publish`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao publicar evento');
+    }
+    
+    return response.json();
+  },
+
+  unpublish: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/events/${id}/unpublish`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao despublicar evento');
+    }
+    
+    return response.json();
+  },
+
+  archive: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/events/${id}/archive`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao arquivar evento');
+    }
+    
+    return response.json();
+  },
+
+  moveToEvent: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/events/${id}/move-to-event`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao mover evento');
+    }
+    
+    return response.json();
+  },
+
+  moveToProgram: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/events/${id}/move-to-program`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({}),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao mover evento');
+    }
+    
+    return response.json();
+  },
 };
 
 // Chapels endpoints

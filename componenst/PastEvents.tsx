@@ -6,7 +6,7 @@ import {
   Image as ImageIcon,
   ChevronDown
 } from 'lucide-react';
-import { eventsAPI } from '../src/services/api';
+import { publicEventsAPI } from '../src/services/api';
 
 interface Event {
   id: string | number;
@@ -32,18 +32,20 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
 
   const loadPastEvents = async () => {
     try {
-      const data = await eventsAPI.getAll();
+      const data = await publicEventsAPI.getAll();
       
       if (data && data.length > 0) {
         // Filtrar apenas eventos passados
         const now = new Date();
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
         const pastEvents = data
           .filter((event: any) => {
-            const eventDate = new Date(event.date);
-            return eventDate < now;
+            const eventDate = new Date(`${event.date}T00:00:00`);
+            return eventDate < startOfToday;
           })
           .map((event: any) => {
-            const eventDate = new Date(event.date);
+            const eventDate = new Date(`${event.date}T00:00:00`);
             const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
               day: 'numeric', 
               month: 'long', 
@@ -69,68 +71,7 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
     }
   };
 
-  const getDefaultEvents = (): Event[] => [
-    {
-      id: '1',
-      title: 'Festa de Santo André 2025',
-      date: '30 de Novembro de 2025',
-      location: 'Igreja Matriz',
-      attendees: 1200,
-      description:
-        'Celebração tradicional em honra ao nosso padroeiro, com missa solene, procissão e confraternização.',
-      hasPhotos: true,
-    },
-    {
-      id: '2',
-      title: 'Natal Solidário 2024',
-      date: '24 de Dezembro de 2024',
-      location: 'Igreja Matriz',
-      attendees: 800,
-      description:
-        'Missa de Natal seguida de distribuição de presentes para crianças carentes da comunidade.',
-      hasPhotos: true,
-    },
-    {
-      id: '3',
-      title: 'Romaria da Juventude',
-      date: '15 de Outubro de 2024',
-      location: 'Várias Capelas',
-      attendees: 450,
-      description:
-        'Caminhada de fé pelos bairros de Tarumã, com visitação às cinco capelas da paróquia.',
-      hasPhotos: true,
-    },
-    {
-      id: '4',
-      title: 'Semana Santa 2024',
-      date: '24–31 de Março de 2024',
-      location: 'Igreja Matriz',
-      attendees: 2000,
-      description:
-        'Celebrações da Semana Santa incluindo Via Sacra, Lava-Pés, Vigília Pascal e Missa da Ressurreição.',
-      hasPhotos: true,
-    },
-    {
-      id: '5',
-      title: 'Festa Junina Paroquial',
-      date: '29 de Junho de 2024',
-      location: 'Salão Paroquial',
-      attendees: 600,
-      description:
-        'Tradicional festa junina com quadrilha, comidas típicas e apresentações culturais.',
-      hasPhotos: true,
-    },
-    {
-      id: '6',
-      title: 'Retiro de Carnaval',
-      date: '10–12 de Fevereiro de 2024',
-      location: 'Casa de Retiros',
-      attendees: 120,
-      description:
-        'Retiro espiritual para jovens e adultos durante o período de carnaval.',
-      hasPhotos: true,
-    },
-  ];
+  const getDefaultEvents = (): Event[] => [];
 
   // 🔹 Agrupar por ano
   const groupedByYear = events.reduce((acc, event) => {

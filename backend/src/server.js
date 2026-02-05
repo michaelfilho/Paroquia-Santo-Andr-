@@ -13,6 +13,7 @@ const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
+const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,7 +34,7 @@ const corsOptions = {
     process.env.FRONTEND_URL,
   ].filter(Boolean),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
@@ -72,13 +73,35 @@ app.use('/api/upload', uploadRoutes);
 app.get('/api/public/events', async (req, res) => {
   try {
     const { Event, Inscription } = require('./models');
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const toDateOnly = (dateStr) => new Date(`${dateStr}T00:00:00`);
+
+    // Buscar eventos que devem aparecer publicamente
     const events = await Event.findAll({
-      where: { published: true },
-      order: [['createdAt', 'DESC']],
+      order: [['date', 'ASC']],
+    });
+
+    // Filtrar apenas eventos que devem aparecer ao público
+    const publicEvents = events.filter((event) => {
+      const eventDate = toDateOnly(event.date);
+
+      // Programações: aparecem somente se publicadas e futuras
+      if (event.isProgram === true && event.published === true) {
+        return eventDate >= startOfToday;
+      }
+
+      // Eventos realizados: aparecem somente se publicados manualmente e já vencidos
+      if (event.isProgram === false && event.published === true) {
+        return eventDate < startOfToday;
+      }
+
+      return false;
     });
 
     const eventsWithCounts = await Promise.all(
-      events.map(async (event) => {
+      publicEvents.map(async (event) => {
         const confirmedCount = await Inscription.count({
           where: { eventId: event.id, status: 'Confirmado' },
         });
@@ -132,6 +155,18 @@ const initializeServer = async () => {
       console.log(`✅ Servidor ATIVO em http://localhost:${PORT}`);
       console.log(`✅ CORS habilitado para frontend`);
       console.log('========== SERVIDOR PRONTO PARA REQUISIÇÕES =========\n');
+
+      // Iniciar auto-archive de eventos a cada 10 minutos
+      setInterval(async () => {
+        try {
+          const result = await autoArchiveExpiredEvents();
+          if (result.archived > 0) {
+            console.log(`🔄 Auto-archive: ${result.archived} evento(s) arquivado(s)`);
+          }
+        } catch (error) {
+          console.error('❌ Erro no auto-archive:', error.message);
+        }
+      }, 10 * 60 * 1000); // 10 minutos
     });
     
     server.on('error', (err) => {

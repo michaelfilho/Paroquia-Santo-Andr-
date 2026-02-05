@@ -38,6 +38,8 @@ interface Event {
   category: 'missa' | 'evento' | 'retiro' | 'festa';
   acceptsRegistration: boolean;
   published?: boolean;
+  isActive?: boolean;
+  isProgram?: boolean;
   maxParticipants?: number | null;
 }
 
@@ -139,13 +141,13 @@ const EventFormModal = ({
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
           <input
-            type="number"
-            placeholder="Horário (ex: 1900)"
+            type="text"
+            placeholder="HH:MM"
             value={eventForm.time}
             onChange={(e) => onTimeChange(e.target.value)}
+            inputMode="numeric"
+            pattern="\d*"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            min="0"
-            max="2359"
           />
         </div>
         <input
@@ -755,7 +757,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     };
 
     const handleEventTimeChange = (value: string) => {
-      setEventForm(prev => ({ ...prev, time: value }));
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
+      const formatted = digitsOnly.length <= 2
+        ? digitsOnly
+        : `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2)}`;
+
+      setEventForm(prev => ({ ...prev, time: formatted }));
     };
 
     const handleEventLocationChange = (value: string) => {
@@ -876,8 +883,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const formatTime = (time: string | number | undefined): string => {
     if (!time) return 'Horário não informado';
-    const timeStr = String(time).padStart(4, '0');
-    return `${timeStr.slice(0, 2)}:${timeStr.slice(2)}`;
+    const raw = String(time).trim();
+    if (!raw) return 'Horário não informado';
+
+    const digitsOnly = raw.replace(/\D/g, '');
+    if (digitsOnly.length >= 3 && digitsOnly.length <= 4 && digitsOnly === raw) {
+      const timeStr = digitsOnly.padStart(4, '0');
+      return `${timeStr.slice(0, 2)}:${timeStr.slice(2)}`;
+    }
+
+    return raw;
   };
 
   // Load data from API on mount
@@ -967,12 +982,41 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleTogglePublish = async (event: Event) => {
     try {
       setLoading(true);
-      const updatedEvent = { ...event, published: !event.published };
-      await eventsAPI.update(event.id, updatedEvent);
+      if (event.published) {
+        await eventsAPI.unpublish(event.id);
+      } else {
+        await eventsAPI.publish(event.id);
+      }
       await loadAllData();
     } catch (error) {
-      console.error('Erro ao publicar evento:', error);
-      alert('Erro ao publicar evento');
+      console.error('Erro ao atualizar publicação do evento:', error);
+      alert('Erro ao atualizar publicação do evento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMoveToEvent = async (event: Event) => {
+    try {
+      setLoading(true);
+      await eventsAPI.moveToEvent(event.id);
+      await loadAllData();
+    } catch (error) {
+      console.error('Erro ao mover evento:', error);
+      alert('Erro ao mover evento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMoveToProgram = async (event: Event) => {
+    try {
+      setLoading(true);
+      await eventsAPI.moveToProgram(event.id);
+      await loadAllData();
+    } catch (error) {
+      console.error('Erro ao mover evento:', error);
+      alert('Erro ao mover evento');
     } finally {
       setLoading(false);
     }
@@ -1225,8 +1269,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  const eventosFiltrados = events.filter((event) => event.category !== 'missa');
-  const programacoesFiltradas = events.filter((event) => event.category === 'missa');
+  const now = new Date();
+  
+  // Programações: isProgram = true (tudo que foi adicionado e não foi movido para eventos)
+  const programacoesFiltradas = events.filter((event) => event.isProgram === true);
+
+  // Eventos: isProgram = false (eventos que foram movidos manualmente da programação)
+  const eventosFiltrados = events.filter((event) => event.isProgram === false);
+
   const eventosComInscricao = events.filter((event) => event.acceptsRegistration === true);
 
   return (
@@ -1355,7 +1405,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         </h3>
                         <div className="space-y-4">
                           {monthEvents.map((event) => (
-                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all`}>
+                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all ${!event.isActive ? 'opacity-60' : ''}`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -1364,6 +1414,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <Eye className="w-3 h-3 mr-1" />
                                         Publicado
+                                      </span>
+                                    )}
+                                    {!event.isActive && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                        📁 Arquivado
                                       </span>
                                     )}
                                   </div>
@@ -1402,6 +1457,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                     className={`p-3 rounded-lg transition-all ${event.published ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
                                   >
                                     {event.published ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                  </button>
+                                  <button
+                                    onClick={() => handleMoveToProgram(event)}
+                                    title="Voltar para Programações"
+                                    className="p-3 rounded-lg transition-all bg-purple-100 hover:bg-purple-200 text-purple-700"
+                                  >
+                                    ⤴️
                                   </button>
                                   <button onClick={() => handleEditEvent(event)} className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
                                     <Edit className="w-5 h-5" />
@@ -1447,7 +1509,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         </h3>
                         <div className="space-y-4">
                           {monthEvents.map((event) => (
-                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all`}>
+                            <div key={event.id} className={`bg-gradient-to-br from-white to-amber-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-amber-100'} rounded-xl p-6 hover:shadow-lg transition-all ${!event.isActive ? 'opacity-60' : ''}`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -1456,6 +1518,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <Eye className="w-3 h-3 mr-1" />
                                         Publicado
+                                      </span>
+                                    )}
+                                    {!event.isActive && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                        📁 Arquivado
                                       </span>
                                     )}
                                   </div>
@@ -1478,6 +1545,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   )}
                                 </div>
                                 <div className="flex space-x-2 ml-4">
+                                  <button
+                                    onClick={() => handleMoveToEvent(event)}
+                                    title="Mover para Eventos"
+                                    className="p-3 rounded-lg transition-all bg-amber-100 hover:bg-amber-200 text-amber-700"
+                                  >
+                                    📁
+                                  </button>
                                   <button
                                     onClick={() => handleTogglePublish(event)}
                                     title={event.published ? 'Despublicar' : 'Publicar'}
