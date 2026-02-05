@@ -11,6 +11,7 @@ const guideRoutes = require('./routes/guides');
 const inscriptionRoutes = require('./routes/inscriptions');
 const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
+const eventPhotosRoutes = require('./routes/event-photos');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
@@ -69,6 +70,21 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Public event photos endpoint
+app.get('/api/public/event-photos/:eventId', async (req, res) => {
+  try {
+    const { EventPhoto } = require('./models');
+    const photos = await EventPhoto.findAll({
+      where: { eventId: req.params.eventId },
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(photos);
+  } catch (error) {
+    console.error('Erro ao buscar fotos públicas:', error);
+    res.status(500).json({ message: 'Erro ao buscar fotos', error: error.message });
+  }
+});
+
 // Public events endpoint
 app.get('/api/public/events', async (req, res) => {
   try {
@@ -92,9 +108,9 @@ app.get('/api/public/events', async (req, res) => {
         return eventDate >= startOfToday;
       }
 
-      // Eventos realizados: aparecem somente se publicados manualmente e já vencidos
+      // Eventos realizados: aparecem somente se publicados manualmente (isProgram false)
       if (event.isProgram === false && event.published === true) {
-        return eventDate < startOfToday;
+        return true;
       }
 
       return false;
@@ -125,6 +141,15 @@ app.use('/api/clergy', authMiddleware, clergyRoutes);
 app.use('/api/guides', authMiddleware, guideRoutes);
 app.use('/api/inscriptions', authMiddleware, inscriptionRoutes);
 app.use('/api/content', authMiddleware, contentRoutes);
+app.use('/api/event-photos', authMiddleware, eventPhotosRoutes);
+
+// Serve event photos
+app.use('/api/uploads/eventos', cors(corsOptions), express.static(path.join(__dirname, '../../Styles/img/eventos'), {
+  setHeaders: (res, filepath) => {
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
 
 // Error handling
 app.use((err, req, res, next) => {

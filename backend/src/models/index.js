@@ -5,6 +5,11 @@ const ClergyMember = require('./ClergyMember');
 const Guide = require('./Guide');
 const Inscription = require('./Inscription');
 const ContentText = require('./ContentText');
+const EventPhoto = require('./EventPhoto');
+
+// Define relationships
+Event.hasMany(EventPhoto, { foreignKey: 'eventId', as: 'photos' });
+EventPhoto.belongsTo(Event, { foreignKey: 'eventId' });
 
 module.exports = {
   Admin,
@@ -14,4 +19,5 @@ module.exports = {
   Guide,
   Inscription,
   ContentText,
+  EventPhoto,
 };

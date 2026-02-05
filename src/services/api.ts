@@ -615,4 +615,57 @@ export const uploadAPI = {
   },
 };
 
+// Event Photos endpoints
+export const eventPhotosAPI = {
+  getByEventId: async (eventId: string) => {
+    const response = await fetch(`${API_BASE_URL}/event-photos/event/${eventId}`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar fotos do evento');
+    }
+    
+    return response.json();
+  },
+
+  upload: async (eventId: string, files: FileList) => {
+    const formData = new FormData();
+    
+    for (let i = 0; i < files.length; i++) {
+      formData.append('photos', files[i]);
+    }
+
+    const authHeaders = getAuthHeaders();
+    delete authHeaders['Content-Type']; // Let browser set it with boundary
+
+    const response = await fetch(`${API_BASE_URL}/event-photos/event/${eventId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeaders['Authorization'] || '',
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao fazer upload das fotos');
+    }
+    
+    return response.json();
+  },
+
+  delete: async (photoId: string) => {
+    const response = await fetch(`${API_BASE_URL}/event-photos/${photoId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao deletar foto');
+    }
+    
+    return response.json();
+  },
+};
+
 export { setAuthToken, clearAuthToken, getAuthHeaders };

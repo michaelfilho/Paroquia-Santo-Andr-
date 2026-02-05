@@ -62,6 +62,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Título, data e local são obrigatórios' });
     }
 
+    // Validate time format HH:MM às HH:MM
+    const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
+    if (!time || !timeRegex.test(time)) {
+      return res.status(400).json({ message: 'Horário deve estar no formato HH:MM às HH:MM' });
+    }
+
     const event = await Event.create({
       title,
       date,
@@ -91,6 +97,14 @@ router.put('/:id', async (req, res) => {
     const event = await Event.findByPk(req.params.id);
     if (!event) {
       return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
+    // Validate time format if provided
+    if (req.body.time) {
+      const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
+      if (!timeRegex.test(req.body.time)) {
+        return res.status(400).json({ message: 'Horário deve estar no formato HH:MM às HH:MM' });
+      }
     }
 
     await event.update(req.body);

@@ -17,9 +17,11 @@ import {
   X,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react';
-import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI } from '../src/services/api';
+import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI, eventPhotosAPI } from '../src/services/api';
 import { ImageUpload } from './ImageUpload';
 
 interface AdminDashboardProps {
@@ -142,11 +144,9 @@ const EventFormModal = ({
           />
           <input
             type="text"
-            placeholder="HH:MM"
+            placeholder="HH:MM às HH:MM"
             value={eventForm.time}
             onChange={(e) => onTimeChange(e.target.value)}
-            inputMode="numeric"
-            pattern="\d*"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
         </div>
@@ -712,6 +712,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [eventInscriptions, setEventInscriptions] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [_loading, setLoading] = useState(false);
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false);
+  const [selectedEventForPhotos, setSelectedEventForPhotos] = useState<Event | null>(null);
+  const [eventPhotos, setEventPhotos] = useState<any[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // State from API
   const [events, setEvents] = useState<Event[]>([]);
@@ -726,7 +730,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     id: '',
     title: '',
     date: '',
-    time: '',
+    time: '00:00 às 00:00',
     location: '',
     description: '',
     category: 'evento',
@@ -756,11 +760,36 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setEventForm(prev => ({ ...prev, date: value }));
     };
 
+    const validateTimeRange = (time: string): boolean => {
+      const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
+      if (!timeRegex.test(time)) return false;
+      const [start, end] = time.split(' às ');
+      const [startH, startM] = start.split(':').map(Number);
+      const [endH, endM] = end.split(':').map(Number);
+      return startH < 24 && startM < 60 && endH < 24 && endM < 60;
+    };
+
     const handleEventTimeChange = (value: string) => {
-      const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
-      const formatted = digitsOnly.length <= 2
-        ? digitsOnly
-        : `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2)}`;
+      let formatted = value;
+
+      // Remove leading/trailing spaces
+      formatted = formatted.trim();
+
+      // Extract all digits
+      const digitsOnly = formatted.replace(/\D/g, '');
+
+      // If we have digits, format them as HH:MM às HH:MM
+      if (digitsOnly.length > 0) {
+        if (digitsOnly.length <= 2) {
+          formatted = digitsOnly;
+        } else if (digitsOnly.length <= 4) {
+          formatted = `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2)}`;
+        } else if (digitsOnly.length <= 6) {
+          formatted = `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2, 4)} às ${digitsOnly.slice(4)}`;
+        } else {
+          formatted = `${digitsOnly.slice(0, 2)}:${digitsOnly.slice(2, 4)} às ${digitsOnly.slice(4, 6)}:${digitsOnly.slice(6, 8)}`;
+        }
+      }
 
       setEventForm(prev => ({ ...prev, time: formatted }));
     };
@@ -941,13 +970,41 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleSaveEvent = async () => {
     try {
       setLoading(true);
+      
+      // Validate required fields
+      if (!eventForm.title.trim()) {
+        alert('Título é obrigatório');
+        setLoading(false);
+        return;
+      }
+      if (!eventForm.date) {
+        alert('Data é obrigatória');
+        setLoading(false);
+        return;
+      }
+      if (!eventForm.location.trim()) {
+        alert('Local é obrigatório');
+        setLoading(false);
+        return;
+      }
+      if (!eventForm.time.trim()) {
+        alert('Horário é obrigatório no formato HH:MM às HH:MM');
+        setLoading(false);
+        return;
+      }
+      if (!validateTimeRange(eventForm.time)) {
+        alert('Horário inválido. Use o formato: HH:MM às HH:MM');
+        setLoading(false);
+        return;
+      }
+      
       if (editingId) {
         await eventsAPI.update(editingId, eventForm);
       } else {
         await eventsAPI.create(eventForm);
       }
       await loadAllData();
-      setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true });
+      setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true });
       setShowEventForm(false);
       setEditingId(null);
     } catch (error) {
@@ -1019,6 +1076,47 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       alert('Erro ao mover evento');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenPhotosModal = async (event: Event) => {
+    setSelectedEventForPhotos(event);
+    setShowPhotoUploadModal(true);
+    try {
+      const photos = await eventPhotosAPI.getByEventId(event.id);
+      setEventPhotos(photos);
+    } catch (error) {
+      console.error('Erro ao carregar fotos:', error);
+    }
+  };
+
+  const handleUploadPhotos = async (files: FileList | null) => {
+    if (!files || !selectedEventForPhotos) return;
+    
+    try {
+      setUploadingPhotos(true);
+      await eventPhotosAPI.upload(selectedEventForPhotos.id, files);
+      const photos = await eventPhotosAPI.getByEventId(selectedEventForPhotos.id);
+      setEventPhotos(photos);
+      alert('Fotos enviadas com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      alert('Erro ao fazer upload das fotos');
+    } finally {
+      setUploadingPhotos(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta foto?')) return;
+    
+    try {
+      await eventPhotosAPI.delete(photoId);
+      setEventPhotos(eventPhotos.filter(p => p.id !== photoId));
+      alert('Foto deletada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao deletar foto:', error);
+      alert('Erro ao deletar foto');
     }
   };
 
@@ -1465,6 +1563,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                   >
                                     ⤴️
                                   </button>
+                                  <button 
+                                    onClick={() => handleOpenPhotosModal(event)} 
+                                    title="Gerenciar Fotos"
+                                    className="p-3 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition-all"
+                                  >
+                                    <ImageIcon className="w-5 h-5" />
+                                  </button>
                                   <button onClick={() => handleEditEvent(event)} className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
                                     <Edit className="w-5 h-5" />
                                   </button>
@@ -1489,7 +1594,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Programações</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'missa', acceptsRegistration: false }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'missa', acceptsRegistration: false }); setEditingId(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -1589,7 +1694,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Inscrições de Eventos</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null }); setEditingId(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -1973,6 +2078,80 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           isOpen={showInscriptionsModal}
           onClose={() => { setShowInscriptionsModal(false); setSelectedEventForInscriptions(null); setEventInscriptions([]); }}
         />
+      )}
+      {showPhotoUploadModal && selectedEventForPhotos && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-amber-900">
+                Gerenciar Fotos: {selectedEventForPhotos.title}
+              </h3>
+              <button 
+                onClick={() => { setShowPhotoUploadModal(false); setSelectedEventForPhotos(null); setEventPhotos([]); }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Upload Section */}
+            <div className="mb-8 p-6 bg-amber-50 rounded-xl border-2 border-dashed border-amber-300">
+              <div className="flex flex-col items-center">
+                <Upload className="w-12 h-12 text-amber-600 mb-4" />
+                <h4 className="text-lg font-semibold text-amber-900 mb-2">Adicionar Fotos</h4>
+                <p className="text-sm text-gray-600 mb-4">Selecione até 20 fotos (JPG, PNG, GIF, WEBP - máx 10MB cada)</p>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={(e) => handleUploadPhotos(e.target.files)}
+                  disabled={uploadingPhotos}
+                  className="hidden"
+                  id="photo-upload"
+                />
+                <label
+                  htmlFor="photo-upload"
+                  className={`cursor-pointer inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                    uploadingPhotos
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg hover:shadow-xl'
+                  }`}
+                >
+                  <Upload className="w-5 h-5" />
+                  <span>{uploadingPhotos ? 'Enviando...' : 'Selecionar Fotos'}</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Photos Grid */}
+            {eventPhotos.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {eventPhotos.map((photo) => (
+                  <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-amber-500 transition-all">
+                    <img
+                      src={`http://localhost:3000${photo.path}`}
+                      alt="Foto do evento"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={() => handleDeletePhoto(photo.id)}
+                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>Nenhuma foto adicionada ainda</p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </section>
   );

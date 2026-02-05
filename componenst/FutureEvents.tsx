@@ -36,7 +36,7 @@ export function FutureEvents() {
         const futureEvents = data
           .filter((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
-            return eventDate >= startOfToday;
+            return event.isProgram === true && event.published === true && eventDate >= startOfToday;
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);

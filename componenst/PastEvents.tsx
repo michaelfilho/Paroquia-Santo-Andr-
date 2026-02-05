@@ -41,8 +41,7 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
         startOfToday.setHours(0, 0, 0, 0);
         const pastEvents = data
           .filter((event: any) => {
-            const eventDate = new Date(`${event.date}T00:00:00`);
-            return eventDate < startOfToday;
+            return event.isProgram === false && event.published === true;
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
@@ -163,15 +162,13 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
                           </div>
                         </div>
 
-                        {event.hasPhotos && (
-                          <button
-                            onClick={() => onViewPhotos(event.id)}
-                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition"
-                          >
-                            <ImageIcon className="w-5 h-5" />
-                            Ver Fotos
-                          </button>
-                        )}
+                        <button
+                          onClick={() => onViewPhotos(event.id)}
+                          className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition"
+                        >
+                          <ImageIcon className="w-5 h-5" />
+                          Ver Fotos
+                        </button>
                       </div>
                     </div>
                   ))}
