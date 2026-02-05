@@ -406,27 +406,41 @@ const ChapelFormModal = ({
           onChange={(e) => onNeighborhoodChange(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         />
-        <input
-          type="text"
-          placeholder="Coordenador"
-          value={chapelForm.coordinator}
-          onChange={(e) => onCoordinatorChange(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-        />
-        <input
-          type="tel"
-          placeholder="Telefone"
-          value={chapelForm.phone || ''}
-          onChange={(e) => onPhoneChange(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-        />
-        <input
-          type="email"
-          placeholder="E-mail"
-          value={chapelForm.email || ''}
-          onChange={(e) => onEmailChange(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-        />
+        
+        {/* Seção de dados do coordenador */}
+        <div className="border-t border-amber-200 pt-4 mt-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+            <p className="text-sm text-amber-800 font-medium">
+              📝 Dados do Coordenador
+            </p>
+            <p className="text-xs text-amber-600 mt-1">
+              Preencha as informações de contato do coordenador da capela
+            </p>
+          </div>
+          
+          <input
+            type="text"
+            placeholder="Nome do Coordenador"
+            value={chapelForm.coordinator}
+            onChange={(e) => onCoordinatorChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none mb-3"
+          />
+          <input
+            type="tel"
+            placeholder="Telefone do Coordenador"
+            value={chapelForm.phone || ''}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none mb-3"
+          />
+          <input
+            type="email"
+            placeholder="E-mail do Coordenador"
+            value={chapelForm.email || ''}
+            onChange={(e) => onEmailChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          />
+        </div>
+        
         <button
           onClick={onSave}
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
@@ -713,13 +727,27 @@ const GuideFormModal = ({
           rows={3}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         />
-        <textarea
-          placeholder="Detalhes (um por linha)"
-          value={guideForm.details.join('\n')}
-          onChange={(e) => onDetailsChange(e.target.value)}
-          rows={5}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-        />
+        <div>
+          <label className="block text-sm font-semibold text-amber-900 mb-2">
+            Instruções Detalhadas
+          </label>
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-2 rounded-r-lg">
+            <p className="text-xs text-blue-800 flex items-start">
+              <span className="mr-2">💡</span>
+              <span>Digite cada instrução em uma linha separada. Cada linha será exibida como um item de lista.</span>
+            </p>
+          </div>
+          <textarea
+            placeholder="Exemplo:&#10;Dirija-se à secretaria paroquial&#10;Apresente os documentos necessários&#10;Agende a data do sacramento&#10;Participe do curso de preparação"
+            value={guideForm.details.join('\n')}
+            onChange={(e) => onDetailsChange(e.target.value)}
+            rows={7}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none font-mono text-sm"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            {guideForm.details.length} {guideForm.details.length === 1 ? 'item' : 'itens'} cadastrado(s)
+          </p>
+        </div>
         <button
           onClick={onSave}
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
@@ -969,7 +997,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     };
 
     const handleGuideDetailsChange = (value: string) => {
-      setGuideForm(prev => ({ ...prev, details: value.split('\n').filter(d => d.trim()) }));
+      setGuideForm(prev => ({ ...prev, details: value.split('\n') }));
     };
 
     // Content form handlers
@@ -1396,10 +1424,15 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleSaveGuide = async () => {
     try {
       setLoading(true);
+      // Filtrar linhas vazias antes de salvar
+      const guideToSave = {
+        ...guideForm,
+        details: guideForm.details.filter(d => d.trim())
+      };
       if (editingId) {
-        await guidesAPI.update(editingId, guideForm);
+        await guidesAPI.update(editingId, guideToSave);
       } else {
-        await guidesAPI.create(guideForm);
+        await guidesAPI.create(guideToSave);
       }
       await loadAllData();
       setGuideForm({ id: '', title: '', content: '', details: [] });
@@ -1960,26 +1993,72 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <span>Adicionar Membro</span>
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {clergy.map((member) => (
-                      <div key={member.id} className="bg-white border-2 border-amber-100 rounded-xl p-4 hover:shadow-lg transition-all">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-amber-900">{member.name}</h3>
-                            <p className="text-sm text-gray-600">{member.role} • {member.period}</p>
-                            {member.email && <p className="text-xs text-gray-500">{member.email}</p>}
+                  <div className="space-y-6">
+                    {/* Agrupar membros do clero por cargo */}
+                    {(() => {
+                      // Agrupar por role
+                      const groupedClergy = clergy.reduce((acc, member) => {
+                        const role = member.role || 'Outros';
+                        if (!acc[role]) {
+                          acc[role] = [];
+                        }
+                        acc[role].push(member);
+                        return acc;
+                      }, {} as Record<string, typeof clergy>);
+
+                      // Definir ordem e cores dos cargos
+                      const roleConfig: Record<string, { color: string, bgColor: string, borderColor: string }> = {
+                        'Pároco': { color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
+                        'Vigário Paroquial': { color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+                        'Diácono': { color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200' },
+                        'Padre': { color: 'text-indigo-700', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200' },
+                      };
+
+                      return Object.entries(groupedClergy).map(([role, members]) => (
+                        <div key={role} className="space-y-3">
+                          {/* Cabeçalho do grupo */}
+                          <div className="flex items-center space-x-3">
+                            <div className={`px-4 py-2 rounded-lg font-bold text-sm ${roleConfig[role]?.bgColor || 'bg-gray-50'} ${roleConfig[role]?.color || 'text-gray-700'} border-2 ${roleConfig[role]?.borderColor || 'border-gray-200'}`}>
+                              {role}
+                            </div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-amber-200 to-transparent"></div>
                           </div>
-                          <div className="flex space-x-2">
-                            <button onClick={() => handleEditCLergy(member)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDeleteCLergy(member.id)} className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          
+                          {/* Membros do grupo */}
+                          <div className="space-y-2 pl-4">
+                            {members.map((member) => (
+                              <div key={member.id} className={`bg-white border-2 ${roleConfig[role]?.borderColor || 'border-amber-100'} rounded-xl p-4 hover:shadow-lg transition-all`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <h3 className="font-bold text-amber-900">{member.name}</h3>
+                                      {member.current && (
+                                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                                          Atual
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-gray-600">{member.period}</p>
+                                    <div className="mt-2 space-y-1">
+                                      {member.email && <p className="text-xs text-gray-500 flex items-center"><span className="mr-1">✉️</span>{member.email}</p>}
+                                      {member.phone && <p className="text-xs text-gray-500 flex items-center"><span className="mr-1">📞</span>{member.phone}</p>}
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <button onClick={() => handleEditCLergy(member)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all">
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDeleteCLergy(member.id)} className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>
