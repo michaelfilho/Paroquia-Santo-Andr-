@@ -56,7 +56,7 @@ router.get('/:id', async (req, res) => {
 // CREATE event (padrão: published=false, isActive=true)
 router.post('/', async (req, res) => {
   try {
-    const { title, date, time, location, description, category, acceptsRegistration, maxParticipants } = req.body;
+    const { title, date, dateEnd, time, location, description, category, acceptsRegistration, maxParticipants, isInscriptionEvent, isProgram, published } = req.body;
 
     if (!title || !date || !location) {
       return res.status(400).json({ message: 'Título, data e local são obrigatórios' });
@@ -71,15 +71,17 @@ router.post('/', async (req, res) => {
     const event = await Event.create({
       title,
       date,
+      dateEnd: dateEnd || null,
       time,
       location,
       description,
       category,
       acceptsRegistration,
       maxParticipants,
-      published: true,
+      published: published !== undefined ? published : false,
       isActive: true,
-      isProgram: true,
+      isProgram: isProgram !== undefined ? isProgram : true,
+      isInscriptionEvent: isInscriptionEvent !== undefined ? isInscriptionEvent : false,
     });
 
     res.status(201).json({

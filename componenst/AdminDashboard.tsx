@@ -34,6 +34,7 @@ interface Event {
   id: string;
   title: string;
   date: string;
+  dateEnd?: string;
   time: string;
   location: string;
   description: string;
@@ -42,6 +43,7 @@ interface Event {
   published?: boolean;
   isActive?: boolean;
   isProgram?: boolean;
+  isInscriptionEvent?: boolean;
   maxParticipants?: number | null;
 }
 
@@ -100,8 +102,6 @@ interface EventFormModalProps {
   onLocationChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onRegistrationChange: (value: boolean) => void;
-  onMaxParticipantsChange?: (value: number | null) => void;
 }
 
 const EventFormModal = ({
@@ -115,13 +115,11 @@ const EventFormModal = ({
   onLocationChange,
   onCategoryChange,
   onDescriptionChange,
-  onRegistrationChange,
-  onMaxParticipantsChange,
 }: EventFormModalProps) => (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Evento</h3>
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Nova'} Programação</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           <X className="w-6 h-6" />
         </button>
@@ -137,14 +135,13 @@ const EventFormModal = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <input
             type="date"
-            placeholder="Data"
             value={eventForm.date}
             onChange={(e) => onDateChange(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
           <input
             type="text"
-            placeholder="HH:MM às HH:MM"
+            placeholder="00:00 às 00:00"
             value={eventForm.time}
             onChange={(e) => onTimeChange(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
@@ -159,13 +156,13 @@ const EventFormModal = ({
         />
         <select
           value={eventForm.category}
-          onChange={(e) => onCategoryChange(e.target.value)}
+          onChange={(e) => onCategoryChange(e.target.value as any)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         >
-          <option value="missa">Missa</option>
           <option value="evento">Evento</option>
+          <option value="missa">Missa</option>
           <option value="retiro">Retiro</option>
-          <option value="festa">Celebração</option>
+          <option value="festa">Festa</option>
         </select>
         <textarea
           placeholder="Descrição do evento"
@@ -174,25 +171,111 @@ const EventFormModal = ({
           rows={4}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         />
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={eventForm.acceptsRegistration}
-            onChange={(e) => onRegistrationChange(e.target.checked)}
-            className="w-4 h-4"
-          />
-          <span className="text-gray-700">Aceita Inscrições</span>
-        </label>
-        {eventForm.acceptsRegistration && (
-          <input
-            type="number"
-            placeholder="Quantidade máxima de participantes (opcional)"
-            value={eventForm.maxParticipants || ''}
-            onChange={(e) => onMaxParticipantsChange?.(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
-            min="1"
-          />
-        )}
+        <button
+          onClick={onSave}
+          className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+        >
+          <Save className="w-5 h-5" />
+          <span>Salvar Programação</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+interface InscriptionEventFormModalProps {
+  editingId: string | null;
+  eventForm: Event;
+  onClose: () => void;
+  onSave: () => void;
+  onTitleChange: (value: string) => void;
+  onDateChange: (value: string) => void;
+  onDateEndChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onLocationChange: (value: string) => void;
+  onDescriptionChange: (value: string) => void;
+  onMaxParticipantsChange: (value: number | null) => void;
+}
+
+const InscriptionEventFormModal = ({
+  editingId,
+  eventForm,
+  onClose,
+  onSave,
+  onTitleChange,
+  onDateChange,
+  onDateEndChange,
+  onTimeChange,
+  onLocationChange,
+  onDescriptionChange,
+  onMaxParticipantsChange,
+}: InscriptionEventFormModalProps) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Evento com Inscrição</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Título do evento"
+          value={eventForm.title}
+          onChange={(e) => onTitleChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Começa em</label>
+            <input
+              type="date"
+              value={eventForm.date}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Termina em</label>
+            <input
+              type="date"
+              value={eventForm.dateEnd || ''}
+              onChange={(e) => onDateEndChange(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+            />
+          </div>
+        </div>
+        <input
+          type="text"
+          placeholder="00:00 às 00:00"
+          value={eventForm.time}
+          onChange={(e) => onTimeChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Local"
+          value={eventForm.location}
+          onChange={(e) => onLocationChange(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <textarea
+          placeholder="Descrição do evento"
+          value={eventForm.description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+        />
+        <input
+          type="number"
+          placeholder="Quantidade máxima de participantes"
+          value={eventForm.maxParticipants || ''}
+          onChange={(e) => onMaxParticipantsChange(e.target.value ? parseInt(e.target.value) : null)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+          min="1"
+          required
+        />
         <button
           onClick={onSave}
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
@@ -210,9 +293,10 @@ interface InscriptionsModalProps {
   inscriptions: any[];
   isOpen: boolean;
   onClose: () => void;
+  onDelete: (id: string) => void;
 }
 
-const InscriptionsModal = ({ event, inscriptions, isOpen, onClose }: InscriptionsModalProps) => {
+const InscriptionsModal = ({ event, inscriptions, isOpen, onClose, onDelete }: InscriptionsModalProps) => {
   if (!isOpen || !event) return null;
 
   return (
@@ -247,14 +331,24 @@ const InscriptionsModal = ({ event, inscriptions, isOpen, onClose }: Inscription
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-900">{inscription.name}</h4>
                     <div className="mt-2 space-y-1 text-sm text-gray-600">
-                      <p>📧 {inscription.email}</p>
-                      <p>📱 {inscription.phone}</p>
+                      <p> {inscription.phone}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-2">
                     <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
                       ✓ Confirmado
                     </span>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Deseja excluir a inscrição de ${inscription.name}?`)) {
+                          onDelete(inscription.id);
+                        }
+                      }}
+                      className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all"
+                      title="Excluir inscrição"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -703,6 +797,7 @@ const ContentFormModal = ({
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('eventos');
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showInscriptionEventForm, setShowInscriptionEventForm] = useState(false);
   const [showChapelForm, setShowChapelForm] = useState(false);
   const [showCleryForm, setShowCleryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
@@ -760,6 +855,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setEventForm(prev => ({ ...prev, date: value }));
     };
 
+    const handleEventDateEndChange = (value: string) => {
+      setEventForm(prev => ({ ...prev, dateEnd: value }));
+    };
+
     const validateTimeRange = (time: string): boolean => {
       const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
       if (!timeRegex.test(time)) return false;
@@ -799,15 +898,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     };
 
     const handleEventCategoryChange = (value: string) => {
-      setEventForm(prev => ({ ...prev, category: value as Event['category'] }));
+      setEventForm(prev => ({ ...prev, category: value as any }));
     };
 
     const handleEventDescriptionChange = (value: string) => {
       setEventForm(prev => ({ ...prev, description: value }));
-    };
-
-    const handleEventRegistrationChange = (value: boolean) => {
-      setEventForm(prev => ({ ...prev, acceptsRegistration: value }));
     };
 
     const handleEventMaxParticipantsChange = (value: number | null) => {
@@ -998,6 +1093,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return;
       }
       
+      // Validação específica para eventos de inscrição
+      if (eventForm.isInscriptionEvent && (!eventForm.maxParticipants || eventForm.maxParticipants <= 0)) {
+        alert('Eventos de inscrição precisam ter um limite de vagas definido (maior que zero)');
+        setLoading(false);
+        return;
+      }
+      
       if (editingId) {
         await eventsAPI.update(editingId, eventForm);
       } else {
@@ -1130,6 +1232,25 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     } catch (error) {
       console.error('Erro ao carregar inscrições:', error);
       alert('Erro ao carregar inscrições confirmadas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteInscription = async (inscriptionId: string) => {
+    try {
+      setLoading(true);
+      await inscriptionsAPI.delete(inscriptionId);
+      // Recarregar lista de inscrições
+      if (selectedEventForInscriptions) {
+        const inscriptions = await inscriptionsAPI.getConfirmedByEvent(selectedEventForInscriptions.id);
+        setEventInscriptions(inscriptions || []);
+      }
+      // Recarregar todos os dados para atualizar contadores
+      await loadAllData();
+    } catch (error) {
+      console.error('Erro ao deletar inscrição:', error);
+      alert('Erro ao deletar inscrição');
     } finally {
       setLoading(false);
     }
@@ -1367,15 +1488,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
-  const now = new Date();
-  
   // Programações: isProgram = true (tudo que foi adicionado e não foi movido para eventos)
-  const programacoesFiltradas = events.filter((event) => event.isProgram === true);
+  const programacoesFiltradas = events.filter((event) => event.isProgram === true && !event.isInscriptionEvent);
 
   // Eventos: isProgram = false (eventos que foram movidos manualmente da programação)
-  const eventosFiltrados = events.filter((event) => event.isProgram === false);
+  const eventosFiltrados = events.filter((event) => event.isProgram === false && !event.isInscriptionEvent);
 
-  const eventosComInscricao = events.filter((event) => event.acceptsRegistration === true);
+  const eventosComInscricao = events.filter((event) => event.isInscriptionEvent === true);
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-amber-50/30 to-white pt-24 pb-12">
@@ -1694,7 +1813,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Inscrições de Eventos</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', dateEnd: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: true, isProgram: false, published: false }); setEditingId(null); setShowInscriptionEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -1714,11 +1833,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         </h3>
                         <div className="space-y-4">
                           {monthEvents.map((event) => (
-                            <div key={event.id} className={`bg-gradient-to-br from-blue-50/50 to-blue-50/30 border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all`}>
+                            <div key={event.id} className={`bg-gradient-to-br from-blue-50/50 to-blue-50/30 border-2 ${event.published ? 'border-green-200 bg-gradient-to-br from-white to-green-50/30' : 'border-blue-200'} rounded-xl p-6 hover:shadow-lg transition-all`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
                                     <h3 className="text-xl font-bold text-blue-900">{event.title}</h3>
+                                    {event.published && (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <Eye className="w-3 h-3 mr-1" />
+                                        Publicado
+                                      </span>
+                                    )}
                                     {event.maxParticipants && (
                                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         <Users className="w-3 h-3 mr-1" />
@@ -1751,6 +1876,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                     title="Ver inscritos confirmados"
                                   >
                                     <Users className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleTogglePublish(event)}
+                                    title={event.published ? 'Despublicar' : 'Publicar'}
+                                    className={`p-3 rounded-lg transition-all ${event.published ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                                  >
+                                    {event.published ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                                   </button>
                                   <button
                                     onClick={() => handleEditEvent(event)}
@@ -1899,51 +2031,111 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <div>
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Inscrições</h2>
-                  <button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl">
-                    <Download className="w-5 h-5" />
-                    <span>Exportar Lista</span>
-                  </button>
-                </div>
-
-                <div className="bg-white rounded-xl border-2 border-amber-100 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-amber-50">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Evento</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Nome</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">E-mail</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Telefone</th>
-                          <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {registrations.map((reg) => (
-                          <tr key={reg.id} className="hover:bg-amber-50/50 transition-colors">
-                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">{reg.event}</td>
-                            <td className="px-6 py-4 text-sm text-gray-900">{reg.name}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{reg.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{reg.phone}</td>
-                            <td className="px-6 py-4">
-                              <select
-                                value={reg.status}
-                                onChange={(e) => handleStatusChange(reg.id, e.target.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold border-2 ${
-                                  reg.status === 'Confirmado'
-                                    ? 'bg-green-100 text-green-700 border-green-200'
-                                    : 'bg-amber-100 text-amber-700 border-amber-200'
-                                }`}
-                              >
-                                <option value="Confirmado">Confirmado</option>
-                                <option value="Pendente">Pendente</option>
-                              </select>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2 px-4 py-2 bg-amber-50 rounded-lg">
+                      <span className="text-sm font-semibold text-amber-900">Total: {registrations.length}</span>
+                      <span className="text-sm text-gray-500">|</span>
+                      <span className="text-sm font-semibold text-green-700">
+                        Confirmados: {registrations.filter(r => r.status === 'Confirmado').length}
+                      </span>
+                      <span className="text-sm text-gray-500">|</span>
+                      <span className="text-sm font-semibold text-amber-700">
+                        Pendentes: {registrations.filter(r => r.status === 'Pendente').length}
+                      </span>
+                    </div>
+                    <button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl">
+                      <Download className="w-5 h-5" />
+                      <span>Exportar Lista</span>
+                    </button>
                   </div>
                 </div>
+
+                {registrations.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-xl border-2 border-amber-100">
+                    <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 text-lg">Nenhuma inscrição recebida ainda</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border-2 border-amber-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-amber-50">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Evento</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Nome</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">E-mail</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Telefone</th>
+                            <th className="px-6 py-4 text-left text-sm font-bold text-amber-900">Status</th>
+                            <th className="px-6 py-4 text-center text-sm font-bold text-amber-900">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {registrations.map((reg) => (
+                            <tr key={reg.id} className="hover:bg-amber-50/50 transition-colors">
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">{reg.event}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900">{reg.name}</td>
+                              <td className="px-6 py-4 text-sm text-gray-600">{reg.email}</td>
+                              <td className="px-6 py-4 text-sm text-gray-600">{reg.phone}</td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold border-2 ${
+                                  reg.status === 'Confirmado'
+                                    ? 'bg-green-100 text-green-700 border-green-200'
+                                    : reg.status === 'Cancelado'
+                                    ? 'bg-red-100 text-red-700 border-red-200'
+                                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                                }`}>
+                                  {reg.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-center space-x-2">
+                                  {reg.status === 'Pendente' && (
+                                    <>
+                                      <button
+                                        onClick={() => handleStatusChange(reg.id, 'Confirmado')}
+                                        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-all flex items-center space-x-1"
+                                        title="Confirmar inscrição"
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span>Confirmar</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleStatusChange(reg.id, 'Cancelado')}
+                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-all flex items-center space-x-1"
+                                        title="Recusar inscrição"
+                                      >
+                                        <X className="w-4 h-4" />
+                                        <span>Recusar</span>
+                                      </button>
+                                    </>
+                                  )}
+                                  {reg.status === 'Confirmado' && (
+                                    <button
+                                      onClick={() => handleStatusChange(reg.id, 'Cancelado')}
+                                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-all"
+                                      title="Cancelar inscrição"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  )}
+                                  {reg.status === 'Cancelado' && (
+                                    <button
+                                      onClick={() => handleStatusChange(reg.id, 'Pendente')}
+                                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-all"
+                                      title="Reativar inscrição"
+                                    >
+                                      Reativar
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2010,7 +2202,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           onLocationChange={handleEventLocationChange}
           onCategoryChange={handleEventCategoryChange}
           onDescriptionChange={handleEventDescriptionChange}
-          onRegistrationChange={handleEventRegistrationChange}
+        />
+      )}
+      {showInscriptionEventForm && (
+        <InscriptionEventFormModal
+          editingId={editingId}
+          eventForm={eventForm}
+          onClose={() => { setShowInscriptionEventForm(false); setEditingId(null); }}
+          onSave={handleSaveEvent}
+          onTitleChange={handleEventTitleChange}
+          onDateChange={handleEventDateChange}
+          onDateEndChange={handleEventDateEndChange}
+          onTimeChange={handleEventTimeChange}
+          onLocationChange={handleEventLocationChange}
+          onDescriptionChange={handleEventDescriptionChange}
           onMaxParticipantsChange={handleEventMaxParticipantsChange}
         />
       )}
@@ -2077,6 +2282,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           inscriptions={eventInscriptions}
           isOpen={showInscriptionsModal}
           onClose={() => { setShowInscriptionsModal(false); setSelectedEventForInscriptions(null); setEventInscriptions([]); }}
+          onDelete={handleDeleteInscription}
         />
       )}
       {showPhotoUploadModal && selectedEventForPhotos && (

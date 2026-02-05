@@ -156,10 +156,6 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
                             <MapPin className="w-4 h-4 mr-2 text-amber-600" />
                             {event.location}
                           </div>
-                          <div className="flex items-center">
-                            <Users className="w-4 h-4 mr-2 text-amber-600" />
-                            {event.attendees.toLocaleString('pt-BR')} participantes
-                          </div>
                         </div>
 
                         <button

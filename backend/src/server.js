@@ -134,6 +134,105 @@ app.get('/api/public/events', async (req, res) => {
   }
 });
 
+// Public inscription events endpoint - SOMENTE eventos criados na aba Inscrições
+app.get('/api/public/inscription-events', async (req, res) => {
+  try {
+    const { Event, Inscription } = require('./models');
+
+    // Buscar SOMENTE eventos marcados como isInscriptionEvent, ativos E publicados
+    const events = await Event.findAll({
+      where: {
+        isInscriptionEvent: true,
+        isActive: true,
+        published: true,
+      },
+      order: [['date', 'ASC']],
+    });
+
+    // Adicionar contagem de inscrições
+    const eventsWithCounts = await Promise.all(
+      events.map(async (event) => {
+        const confirmedCount = await Inscription.count({
+          where: { eventId: event.id, status: 'Confirmado' },
+        });
+        
+        const availableSpots = event.maxParticipants 
+          ? Math.max(0, event.maxParticipants - confirmedCount)
+          : null;
+
+        return {
+          ...event.toJSON(),
+          confirmedInscriptions: confirmedCount,
+          availableSpots: availableSpots,
+          status: event.maxParticipants && confirmedCount >= event.maxParticipants ? 'closed' : 'open',
+        };
+      })
+    );
+
+    res.json(eventsWithCounts);
+  } catch (error) {
+    console.error('Erro ao buscar eventos de inscrição:', error);
+    res.status(500).json({ message: 'Erro ao buscar eventos de inscrição', error: error.message });
+  }
+});
+
+// Public inscription creation route (sem autenticação)
+app.post('/api/public/inscriptions', async (req, res) => {
+  try {
+    const { eventId, name, phone } = req.body;
+
+    if (!eventId || !name || !phone) {
+      return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
+    }
+
+    const { Inscription, Event } = require('./models');
+
+    // Verify if event exists
+    const event = await Event.findByPk(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
+    if (!event.acceptsRegistration) {
+      return res.status(400).json({ message: 'Este evento não aceita inscrições' });
+    }
+
+    // VALIDAÇÃO DE LIMITE DE VAGAS
+    if (event.maxParticipants && event.maxParticipants > 0) {
+      const confirmedCount = await Inscription.count({
+        where: { 
+          eventId: eventId, 
+          status: 'Confirmado' 
+        }
+      });
+
+      if (confirmedCount >= event.maxParticipants) {
+        return res.status(400).json({ 
+          message: 'Vagas esgotadas para este evento',
+          availableSpots: 0,
+          totalSpots: event.maxParticipants
+        });
+      }
+    }
+
+    const inscription = await Inscription.create({
+      eventId,
+      name,
+      email: null,
+      phone,
+      status: 'Pendente',
+    });
+
+    res.status(201).json({
+      message: 'Inscrição realizada com sucesso',
+      inscription,
+    });
+  } catch (error) {
+    console.error('Erro ao criar inscrição pública:', error);
+    res.status(500).json({ message: 'Erro ao criar inscrição', error: error.message });
+  }
+});
+
 // Protected Routes (requerem autenticação)
 app.use('/api/events', authMiddleware, eventRoutes);
 app.use('/api/chapels', authMiddleware, chapelRoutes);
