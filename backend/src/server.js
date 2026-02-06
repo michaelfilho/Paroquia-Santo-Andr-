@@ -96,6 +96,7 @@ app.get('/api/public/events', async (req, res) => {
 
     // Buscar eventos que devem aparecer publicamente
     const events = await Event.findAll({
+      where: { isInscriptionEvent: false },
       order: [['date', 'ASC']],
     });
 
@@ -265,10 +266,91 @@ const initializeServer = async () => {
     console.log('📊 Conectando ao banco de dados...');
     await sequelize.authenticate();
     console.log('✅ Banco de dados autenticado');
-    
+    // Ensure existing rows in `events` have unique, non-null ids before running
+    // `sync({ alter: true })` — SQLite/Sequelize may create a backup table and
+    // copy data, which fails if there are duplicate/null primary keys.
+    const ensureUniqueEventIds = async () => {
+      try {
+        // Only run this for SQLite where the issue was observed
+        if (sequelize.getDialect && sequelize.getDialect() !== 'sqlite') return;
+
+        console.log('🔍 Verificando ids da tabela `events` (pre-sync)...');
+        // Get all rows with their rowid and id
+        const [rows] = await sequelize.query('SELECT rowid, id FROM events;');
+
+        if (!rows || rows.length === 0) {
+          console.log('ℹ️  Tabela `events` vazia — nada a fazer');
+          return;
+        }
+
+        const crypto = require('crypto');
+
+        // Map id -> occurrences (array of rowids)
+        const idMap = new Map();
+        for (const r of rows) {
+          const rid = r.rowid;
+          const id = r.id;
+          if (id === null || id === undefined || id === '') {
+            // Assign a new uuid immediately
+            const newId = crypto.randomUUID();
+            await sequelize.query('UPDATE events SET id = :newId WHERE rowid = :rid;', {
+              replacements: { newId, rid },
+            });
+            console.log(`🔧 Preenchido id nulo para rowid=${rid}`);
+            // add to map
+            idMap.set(newId, [rid]);
+            continue;
+          }
+          if (!idMap.has(id)) idMap.set(id, []);
+          idMap.get(id).push(rid);
+        }
+
+        // For any id that appears more than once, keep the first row and
+        // assign new uuids to the rest.
+        for (const [id, occ] of idMap.entries()) {
+          if (occ.length > 1) {
+            // skip the first occurrence
+            for (let i = 1; i < occ.length; i++) {
+              const rid = occ[i];
+              const newId = crypto.randomUUID();
+              await sequelize.query('UPDATE events SET id = :newId WHERE rowid = :rid;', {
+                replacements: { newId, rid },
+              });
+              console.log(`🔧 Corrigido id duplicado (original=${id}) para rowid=${rid}`);
+            }
+          }
+        }
+
+        console.log('✅ Verificação de ids concluída');
+      } catch (err) {
+        console.error('❌ Falha ao garantir ids únicos em `events`:', err.message || err);
+        // don't rethrow — sync should still run and surface errors if any
+      }
+    };
+
+    await ensureUniqueEventIds();
+
     console.log('🔄 Sincronizando schema...');
-    await sequelize.sync({ alter: true });
-    console.log('✅ Schema sincronizado');
+    let foreignKeysDisabled = false;
+    try {
+      if (sequelize.getDialect && sequelize.getDialect() === 'sqlite') {
+        console.log('⚠️  SQLite detectado — desabilitando foreign_keys para sincronização');
+        await sequelize.query('PRAGMA foreign_keys = OFF;');
+        foreignKeysDisabled = true;
+      }
+
+      await sequelize.sync({ alter: true });
+      console.log('✅ Schema sincronizado');
+    } finally {
+      if (foreignKeysDisabled) {
+        try {
+          await sequelize.query('PRAGMA foreign_keys = ON;');
+          console.log('✅ foreign_keys reabilitado');
+        } catch (err) {
+          console.error('Erro ao reabilitar foreign_keys:', err.message || err);
+        }
+      }
+    }
 
     console.log('🌱 Verificando conteúdo padrão...');
     await seedDefaultContent();

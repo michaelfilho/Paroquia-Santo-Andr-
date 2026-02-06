@@ -21,7 +21,7 @@ import {
   Image as ImageIcon,
   Upload
 } from 'lucide-react';
-import { eventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI, eventPhotosAPI } from '../src/services/api';
+import { eventsAPI, publicEventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI, eventPhotosAPI } from '../src/services/api';
 import { ImageUpload } from './ImageUpload';
 
 interface AdminDashboardProps {
@@ -864,6 +864,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   // State from API
   const [events, setEvents] = useState<Event[]>([]);
+  const [inscriptionEvents, setInscriptionEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [chapels, setChapels] = useState<Chapel[]>([]);
   const [clergy, setCLergy] = useState<ClergyMember[]>([]);
@@ -1085,16 +1086,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const loadAllData = async () => {
     try {
       setLoading(true);
-      const [eventsData, chapelsData, clergyData, guidesData, inscriptionsData, contentData] = await Promise.all([
+      const [eventsData, allAdminEvents, chapelsData, clergyData, guidesData, inscriptionsData, contentData] = await Promise.all([
         eventsAPI.getAll(),
+        eventsAPI.getAllAdmin(),
         chapelsAPI.getAll(),
         clergyAPI.getAll(),
         guidesAPI.getAll(),
         inscriptionsAPI.getAll(),
         contentAPI.getAll(),
       ]);
-      
+
       setEvents(eventsData || []);
+      // Filtrar apenas eventos marcados como de inscrição para a aba específica
+      setInscriptionEvents((allAdminEvents || []).filter((e: Event) => e.isInscriptionEvent === true));
       setChapels(chapelsData || []);
       setCLergy(clergyData || []);
       setGuides(guidesData || []);
@@ -1164,7 +1168,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         await eventsAPI.create(eventForm);
       }
       await loadAllData();
-      setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true });
+      setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: false });
       setShowEventForm(false);
       setEditingId(null);
     } catch (error) {
@@ -1178,7 +1182,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleEditEvent = (event: Event) => {
     setEventForm(event);
     setEditingId(event.id);
-    setShowEventForm(true);
+    // Abrir o modal correto dependendo se for evento de inscrição
+    if (event.isInscriptionEvent) {
+      setShowInscriptionEventForm(true);
+    } else {
+      setShowEventForm(true);
+    }
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -1565,7 +1574,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   // Eventos: isProgram = false (eventos que foram movidos manualmente da programação)
   const eventosFiltrados = events.filter((event) => event.isProgram === false && !event.isInscriptionEvent);
 
-  const eventosComInscricao = events.filter((event) => event.isInscriptionEvent === true);
+  // Eventos com inscrição carregados diretamente (apenas os criados na aba de Inscrições)
+  const eventosComInscricao = inscriptionEvents;
 
   return (
     <section className="min-h-screen bg-gradient-to-b from-amber-50/30 to-white pt-24 pb-12">

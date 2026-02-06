@@ -7,6 +7,7 @@ const router = express.Router();
 router.get('/public/with-counts', async (req, res) => {
   try {
     const events = await Event.findAll({
+      where: { isInscriptionEvent: false },
       order: [['createdAt', 'DESC']],
     });
 
@@ -31,7 +32,12 @@ router.get('/public/with-counts', async (req, res) => {
 // GET all events
 router.get('/', async (req, res) => {
   try {
+    // If includeInscription=true is provided, return all events (for admin views)
+    const includeInscription = req.query.includeInscription === 'true';
+    const where = includeInscription ? {} : { isInscriptionEvent: false };
+
     const events = await Event.findAll({
+      where,
       order: [['createdAt', 'DESC']],
     });
     res.json(events);

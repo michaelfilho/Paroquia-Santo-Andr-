@@ -105,6 +105,17 @@ export const eventsAPI = {
     return response.json();
   },
 
+  // Admin: get all events including those de inscrição
+  getAllAdmin: async () => {
+    const response = await fetch(`${API_BASE_URL}/events?includeInscription=true`, {
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw new Error('Erro ao buscar eventos (admin)');
+    }
+    return response.json();
+  },
+
   getAllWithCounts: async () => {
     const response = await fetch(`${API_BASE_URL}/events/public/with-counts`, {
       headers: getAuthHeaders(),
