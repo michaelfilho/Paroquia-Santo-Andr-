@@ -59,7 +59,7 @@ export function About() {
 
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-600 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <Users className="w-14 h-14 text-amber-600 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">3.500+</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">9.000+</h4>
               <p className="text-gray-600 font-medium">Fiéis Ativos</p>
             </div>
 

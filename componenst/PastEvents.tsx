@@ -25,6 +25,8 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
   const [openYear, setOpenYear] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
 
+  const toBoolean = (value: unknown) => value === true || value === 1 || value === '1' || value === 'true';
+
   useEffect(() => {
     loadPastEvents();
   }, []);
@@ -40,7 +42,9 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
         startOfToday.setHours(0, 0, 0, 0);
         const pastEvents = data
           .filter((event: any) => {
-            return event.isProgram === false && event.published === true;
+            const isProgram = toBoolean(event.isProgram);
+            const isPublished = toBoolean(event.published);
+            return !isProgram && isPublished;
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);

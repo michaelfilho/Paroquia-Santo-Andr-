@@ -20,6 +20,8 @@ export function FutureEvents() {
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [events, setEvents] = useState<FutureEvent[]>([]);
 
+  const toBoolean = (value: unknown) => value === true || value === 1 || value === '1' || value === 'true';
+
   useEffect(() => {
     loadFutureEvents();
   }, []);
@@ -36,7 +38,9 @@ export function FutureEvents() {
         const futureEvents = data
           .filter((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
-            return event.isProgram === true && event.published === true && eventDate >= startOfToday;
+            const isProgram = toBoolean(event.isProgram);
+            const isPublished = toBoolean(event.published);
+            return isProgram && isPublished && eventDate >= startOfToday;
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
