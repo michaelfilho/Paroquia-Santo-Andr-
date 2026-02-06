@@ -1,5 +1,7 @@
 const express = require('express');
-const { Event, Inscription } = require('../models');
+const fs = require('fs');
+const path = require('path');
+const { Event, Inscription, EventPhoto } = require('../models');
 
 const router = express.Router();
 
@@ -221,6 +223,16 @@ router.delete('/:id', async (req, res) => {
     const event = await Event.findByPk(req.params.id);
     if (!event) {
       return res.status(404).json({ message: 'Evento não encontrado' });
+    }
+
+    // Delete associated photos (db + filesystem) first
+    const photos = await EventPhoto.findAll({ where: { eventId: req.params.id } });
+    for (const photo of photos) {
+      const filepath = path.join(__dirname, '../../../Styles/img/eventos', photo.filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+      await photo.destroy();
     }
 
     // Delete associated inscriptions first

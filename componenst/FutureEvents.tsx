@@ -40,7 +40,7 @@ export function FutureEvents() {
             const eventDate = new Date(`${event.date}T00:00:00`);
             const isProgram = toBoolean(event.isProgram);
             const isPublished = toBoolean(event.published);
-            return isProgram && isPublished && eventDate >= startOfToday;
+            return isProgram && isPublished;
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);

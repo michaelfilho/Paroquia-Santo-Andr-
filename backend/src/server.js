@@ -92,7 +92,26 @@ app.get('/api/public/events', async (req, res) => {
     const now = new Date();
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
-    const toDateOnly = (dateStr) => new Date(`${dateStr}T00:00:00`);
+    const toDateOnly = (value) => {
+      if (!value) return new Date('invalid');
+      if (value instanceof Date) {
+        return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      }
+      if (typeof value === 'string') {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+          return new Date(`${value}T00:00:00`);
+        }
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) {
+          return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+        }
+      }
+      const fallback = new Date(value);
+      if (!Number.isNaN(fallback.getTime())) {
+        return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
+      }
+      return new Date('invalid');
+    };
 
     // Buscar eventos que devem aparecer publicamente
     const events = await Event.findAll({
@@ -104,9 +123,9 @@ app.get('/api/public/events', async (req, res) => {
     const publicEvents = events.filter((event) => {
       const eventDate = toDateOnly(event.date);
 
-      // Programações: aparecem somente se publicadas e futuras
+      // Programações: aparecem se publicadas
       if (event.isProgram === true && event.published === true) {
-        return eventDate >= startOfToday;
+        return true;
       }
 
       // Eventos realizados: aparecem somente se publicados manualmente (isProgram false)
