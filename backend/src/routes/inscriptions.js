@@ -123,6 +123,33 @@ router.put('/:id', async (req, res) => {
     }
 
     const { status } = req.body;
+    if (status === 'Confirmado') {
+      const event = await Event.findByPk(inscription.eventId);
+      if (!event) {
+        return res.status(404).json({ message: 'Evento não encontrado' });
+      }
+
+      if (event.maxParticipants && event.maxParticipants > 0) {
+        const confirmedCount = await Inscription.count({
+          where: {
+            eventId: inscription.eventId,
+            status: 'Confirmado',
+          },
+        });
+
+        const alreadyConfirmed = inscription.status === 'Confirmado';
+        const effectiveCount = alreadyConfirmed ? confirmedCount - 1 : confirmedCount;
+
+        if (effectiveCount >= event.maxParticipants) {
+          return res.status(400).json({
+            message: 'Nao ha vagas disponiveis para confirmar esta inscricao',
+            availableSpots: 0,
+            totalSpots: event.maxParticipants,
+          });
+        }
+      }
+    }
+
     if (status && ['Pendente', 'Confirmado', 'Cancelado'].includes(status)) {
       await inscription.update({ status });
     } else {

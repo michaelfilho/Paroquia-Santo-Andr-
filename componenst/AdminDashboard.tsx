@@ -152,6 +152,10 @@ const EventFormModal = ({
             placeholder="00:00 às 00:00"
             value={eventForm.time}
             onChange={(e) => onTimeChange(e.target.value)}
+            inputMode="numeric"
+            pattern="\d{2}:\d{2}\sàs\s\d{2}:\d{2}"
+            title="Use formato 24h: 00:00 às 00:00"
+            maxLength={14}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
           />
         </div>
@@ -263,6 +267,10 @@ const InscriptionEventFormModal = ({
           placeholder="00:00 às 00:00"
           value={eventForm.time}
           onChange={(e) => onTimeChange(e.target.value)}
+          inputMode="numeric"
+          pattern="\d{2}:\d{2}\sàs\s\d{2}:\d{2}"
+          title="Use formato 24h: 00:00 às 00:00"
+          maxLength={14}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
         />
         <input
@@ -946,7 +954,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       formatted = formatted.trim();
 
       // Extract all digits
-      const digitsOnly = formatted.replace(/\D/g, '');
+      let digitsOnly = formatted.replace(/\D/g, '').slice(0, 8);
+
+      const clampSegment = (segment: string, maxValue: number) => {
+        if (segment.length < 2) return segment;
+        const numeric = Math.min(Number(segment), maxValue);
+        return String(numeric).padStart(2, '0');
+      };
+
+      const startH = clampSegment(digitsOnly.slice(0, 2), 23);
+      const startM = clampSegment(digitsOnly.slice(2, 4), 59);
+      const endH = clampSegment(digitsOnly.slice(4, 6), 23);
+      const endM = clampSegment(digitsOnly.slice(6, 8), 59);
+
+      digitsOnly = `${startH}${startM}${endH}${endM}`.slice(0, digitsOnly.length);
 
       // If we have digits, format them as HH:MM às HH:MM
       if (digitsOnly.length > 0) {
@@ -1490,7 +1511,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setEditingId(null);
     } catch (error) {
       console.error('Erro ao salvar capela:', error);
-      alert('Erro ao salvar capela');
+      alert('Erro preencha os campos obrigatórios e tente novamente');
     } finally {
       setLoading(false);
     }
@@ -1712,7 +1733,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       await loadAllData();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
-      alert('Erro ao atualizar status');
+      alert('Erro vagas já preenchidas');
     } finally {
       setLoading(false);
     }

@@ -95,7 +95,7 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
               </button>
             ))}
             <a
-              href="https://instagram.com/paroquiasantoandre"
+              href="https://www.instagram.com/paroquiasantoandre.taruma/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white px-5 py-2.5 rounded-full hover:shadow-2xl transition-all duration-300 hover:scale-105 ml-4"

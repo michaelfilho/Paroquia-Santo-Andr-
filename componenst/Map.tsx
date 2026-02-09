@@ -112,6 +112,20 @@ export function Map() {
     },
   ];
 
+  const buildDestination = (chapel: Chapel) => {
+    const parts = [chapel.name, chapel.address, chapel.neighborhood].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  const openDirections = (chapel: Chapel) => {
+    const destination = buildDestination(chapel);
+    if (!destination) {
+      return;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${encodeURIComponent(destination)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <section id="mapa" className="py-12 md:py-24 bg-gradient-to-b from-amber-50/30 to-white relative overflow-hidden">
       {/* Decorative Background */}
@@ -164,7 +178,16 @@ export function Map() {
             {chapels.map((chapel) => (
               <div
                 key={chapel.id}
-                className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-amber-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                role="button"
+                tabIndex={0}
+                onClick={() => openDirections(chapel)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openDirections(chapel);
+                  }
+                }}
+                className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-amber-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
@@ -197,6 +220,7 @@ export function Map() {
                           <span className="font-semibold text-amber-900">Telefone:</span> {chapel.phone}
                         </p>
                       )}
+                      <p className="text-amber-700 font-semibold">Ver rota no Google Maps</p>
                     </div>
                   </div>
                 </div>

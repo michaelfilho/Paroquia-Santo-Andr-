@@ -36,25 +36,25 @@ export function Footer({ onAdminClick }: FooterProps) {
               <div className="flex items-start space-x-3 group">
                 <Phone className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <a href="tel:1432345678" className="hover:text-amber-200 transition-colors">
-                    (14) 3234-5678
+                  <a href="tel:18997994927" className="hover:text-amber-200 transition-colors">
+                    (18) 99799-4927
                   </a>
                 </div>
               </div>
               <div className="flex items-start space-x-3 group">
                 <Mail className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <a href="mailto:contato@paroquiasantoandre.org.br" className="hover:text-amber-200 transition-colors break-all">
-                    contato@paroquiasantoandre.org.br
+                  <a href="mailto:parsant@hotmail.com" className="hover:text-amber-200 transition-colors break-all">
+                    parsant@hotmail.com
                   </a>
                 </div>
               </div>
               <div className="flex items-start space-x-3 group">
                 <MapPin className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  Rua da Igreja, 123<br />
+                  Rua das Violetas, 257<br />
                   Centro - Tarumã/SP<br />
-                  CEP: 18500-000
+                  CEP: 19820035
                 </div>
               </div>
             </div>
@@ -68,7 +68,7 @@ export function Footer({ onAdminClick }: FooterProps) {
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://instagram.com/paroquiasantoandre"
+                href="https://www.instagram.com/paroquiasantoandre.taruma/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-lg"
@@ -77,7 +77,7 @@ export function Footer({ onAdminClick }: FooterProps) {
                 <Instagram className="w-6 h-6" />
               </a>
               <a
-                href="https://facebook.com/paroquiasantoandre"
+                href="https://www.facebook.com/paroquia.santoandre.37"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-lg"
