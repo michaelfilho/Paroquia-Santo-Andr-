@@ -12,6 +12,7 @@ const inscriptionRoutes = require('./routes/inscriptions');
 const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
 const eventPhotosRoutes = require('./routes/event-photos');
+const adminRoutes = require('./routes/admins');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
@@ -261,6 +262,7 @@ app.use('/api/guides', authMiddleware, guideRoutes);
 app.use('/api/inscriptions', authMiddleware, inscriptionRoutes);
 app.use('/api/content', authMiddleware, contentRoutes);
 app.use('/api/event-photos', authMiddleware, eventPhotosRoutes);
+app.use('/api/admins', authMiddleware, adminRoutes);
 
 // Serve event photos
 app.use('/api/uploads/eventos', cors(corsOptions), express.static(path.join(__dirname, '../../Styles/img/eventos'), {

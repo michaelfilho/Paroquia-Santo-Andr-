@@ -21,14 +21,14 @@ import {
   Image as ImageIcon,
   Upload
 } from 'lucide-react';
-import { eventsAPI, publicEventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI, eventPhotosAPI } from '../src/services/api';
+import { eventsAPI, publicEventsAPI, chapelsAPI, clergyAPI, guidesAPI, inscriptionsAPI, contentAPI, eventPhotosAPI, adminsAPI, getAdminProfile, setAdminProfile } from '../src/services/api';
 import { ImageUpload } from './ImageUpload';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'eventos' | 'programacoes' | 'inscricoes-eventos' | 'paroquia' | 'inscricoes' | 'guias' | 'textos';
+type TabType = 'eventos' | 'programacoes' | 'inscricoes-eventos' | 'paroquia' | 'inscricoes' | 'guias' | 'textos' | 'administradores';
 
 interface Event {
   id: string;
@@ -38,7 +38,7 @@ interface Event {
   time: string;
   location: string;
   description: string;
-  category: 'missa' | 'evento' | 'retiro' | 'festa';
+  category: 'Missa' | 'Evento' | 'Retiro' | 'Festa' | 'Terço'  | 'Adoração' | 'Confissão' | 'Celebração' ;
   acceptsRegistration: boolean;
   published?: boolean;
   isActive?: boolean;
@@ -91,6 +91,12 @@ interface ContentText {
   key: string;
   title: string;
   content: string;
+}
+
+interface AdminUser {
+  id: string;
+  username: string;
+  role: 'admin' | 'super';
 }
 
 interface EventFormModalProps {
@@ -165,6 +171,10 @@ const EventFormModal = ({
           <option value="missa">Missa</option>
           <option value="retiro">Retiro</option>
           <option value="festa">Festa</option>
+          <option value="terço">Terço</option>
+          <option value="adoração">Adoração</option>
+          <option value="confissão">Confissão</option>
+          <option value="celebração">Celebração</option>
         </select>
         <textarea
           placeholder="Descrição do evento"
@@ -452,6 +462,9 @@ const ChapelFormModal = ({
             placeholder="Telefone do Coordenador"
             value={chapelForm.phone || ''}
             onChange={(e) => onPhoneChange(e.target.value)}
+            maxLength={15}
+            autoComplete="tel"
+            inputMode="tel"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none mb-3"
           />
           <input
@@ -870,6 +883,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [clergy, setCLergy] = useState<ClergyMember[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [contentTexts, setContentTexts] = useState<ContentText[]>([]);
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(() => getAdminProfile());
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
 
   // Form state
   const [eventForm, setEventForm] = useState<Event>({
@@ -879,7 +894,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     time: '00:00 às 00:00',
     location: '',
     description: '',
-    category: 'evento',
+    category: 'Evento',
     acceptsRegistration: true,
   });
   const [chapelForm, setChapelForm] = useState<Chapel>({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '' });
@@ -889,12 +904,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [clergyPeriodMode, setClergyPeriodMode] = useState<'atual' | 'numeros'>('atual');
   const [clergyPeriodStart, setClergyPeriodStart] = useState('');
   const [clergyPeriodEnd, setClergyPeriodEnd] = useState('');
+  const [profileForm, setProfileForm] = useState({ username: '', password: '', confirmPassword: '' });
+  const [adminForm, setAdminForm] = useState({ id: '', username: '', password: '', role: 'admin' as 'admin' | 'super' });
+  const [adminFormMode, setAdminFormMode] = useState<'create' | 'edit'>('create');
 
   const isClergyFormValid = Boolean(
     clergyForm.name.trim() &&
     clergyForm.role.trim() &&
     clergyForm.period.trim()
   );
+
+  const isSuperAdmin = currentAdmin?.role === 'super';
 
   // Agrupar eventos por mês
     // Event form handlers
@@ -981,8 +1001,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setChapelForm(prev => ({ ...prev, coordinator: value }));
     };
 
+    const formatPhoneNumber = (value: string) => {
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+      if (!digits) return '';
+      if (digits.length <= 2) return `(${digits}`;
+      if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+      if (digits.length <= 10) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+      }
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    };
+
     const handleChapelPhoneChange = (value: string) => {
-      setChapelForm(prev => ({ ...prev, phone: value }));
+      setChapelForm(prev => ({ ...prev, phone: formatPhoneNumber(value) }));
     };
 
     const handleChapelEmailChange = (value: string) => {
@@ -1081,6 +1112,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   // Load data from API on mount
   useEffect(() => {
     loadAllData();
+    loadAdminProfile();
   }, []);
 
   const loadAllData = async () => {
@@ -1120,6 +1152,124 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAdminProfile = async () => {
+    try {
+      const me = await adminsAPI.getMe();
+      setCurrentAdmin(me);
+      setAdminProfile(me);
+      setProfileForm((prev) => ({ ...prev, username: me.username }));
+
+      if (me.role === 'super') {
+        const adminList = await adminsAPI.getAll();
+        setAdmins(adminList || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do admin:', error);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const username = profileForm.username.trim();
+      if (!username) {
+        alert('Usuário é obrigatório');
+        return;
+      }
+
+      if (profileForm.password && profileForm.password !== profileForm.confirmPassword) {
+        alert('As senhas não conferem');
+        return;
+      }
+
+      const payload: { username: string; password?: string } = { username };
+      if (profileForm.password) {
+        payload.password = profileForm.password;
+      }
+
+      const response = await adminsAPI.updateMe(payload);
+      if (response?.admin) {
+        setCurrentAdmin(response.admin);
+        setAdminProfile(response.admin);
+      }
+
+      setProfileForm((prev) => ({ ...prev, password: '', confirmPassword: '' }));
+      alert('Dados atualizados com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      if (error instanceof Error && error.message) {
+        alert(error.message);
+      } else {
+        alert('Erro ao atualizar dados');
+      }
+    }
+  };
+
+  const handleSaveAdmin = async () => {
+    try {
+      const username = adminForm.username.trim();
+      if (!username) {
+        alert('Usuário é obrigatório');
+        return;
+      }
+
+      if (adminFormMode === 'create' && !adminForm.password) {
+        alert('Senha é obrigatória para criar admin');
+        return;
+      }
+
+      const payload: { username: string; password?: string; role?: 'admin' | 'super' } = {
+        username,
+        role: adminFormMode === 'edit' ? adminForm.role : 'admin',
+      };
+
+      if (adminForm.password) {
+        payload.password = adminForm.password;
+      }
+
+      if (adminFormMode === 'create') {
+        await adminsAPI.create(payload);
+      } else {
+        await adminsAPI.update(adminForm.id, payload);
+      }
+
+      const adminList = await adminsAPI.getAll();
+      setAdmins(adminList || []);
+      setAdminForm({ id: '', username: '', password: '', role: 'admin' });
+      setAdminFormMode('create');
+      alert('Administrador salvo com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar administrador:', error);
+      if (error instanceof Error && error.message) {
+        alert(error.message);
+      } else {
+        alert('Erro ao salvar administrador');
+      }
+    }
+  };
+
+  const handleEditAdmin = (admin: AdminUser) => {
+    setAdminForm({ id: admin.id, username: admin.username, password: '', role: admin.role });
+    setAdminFormMode('edit');
+  };
+
+  const handleCancelAdminEdit = () => {
+    setAdminForm({ id: '', username: '', password: '', role: 'admin' });
+    setAdminFormMode('create');
+  };
+
+  const handleDeleteAdmin = async (adminId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este administrador?')) return;
+
+    try {
+      await adminsAPI.delete(adminId);
+      const adminList = await adminsAPI.getAll();
+      setAdmins(adminList || []);
+    } catch (error) {
+      console.error('Erro ao excluir administrador:', error);
+      alert('Erro ao excluir administrador');
     }
   };
 
@@ -1168,7 +1318,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         await eventsAPI.create(eventForm);
       }
       await loadAllData();
-      setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: false });
+      setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'Evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: false });
       setShowEventForm(false);
       setEditingId(null);
     } catch (error) {
@@ -1680,6 +1830,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <Users className="w-5 h-5" />
               <span>Inscrições</span>
             </button>
+            {isSuperAdmin && (
+              <button
+                onClick={() => setActiveTab('administradores')}
+                className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'administradores'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-amber-50'
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                <span>Administradores</span>
+              </button>
+            )}
           </div>
 
           {/* Tab Content */}
@@ -1794,7 +1957,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Programações</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'missa', acceptsRegistration: false }); setEditingId(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'Missa', acceptsRegistration: false }); setEditingId(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -1894,7 +2057,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Inscrições de Eventos</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', dateEnd: '', time: '00:00 às 00:00', location: '', description: '', category: 'evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: true, isProgram: false, published: false }); setEditingId(null); setShowInscriptionEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', dateEnd: '', time: '00:00 às 00:00', location: '', description: '', category: 'Evento', acceptsRegistration: true, maxParticipants: null, isInscriptionEvent: true, isProgram: false, published: false }); setEditingId(null); setShowInscriptionEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -2260,6 +2423,176 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'administradores' && isSuperAdmin && (
+              <div className="space-y-8">
+                <div className="bg-white rounded-xl border-2 border-amber-100 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-amber-900">Meu Perfil</h2>
+                      <p className="text-sm text-gray-500">Edite seu usuário e senha</p>
+                    </div>
+                    {currentAdmin && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        currentAdmin.role === 'super'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {currentAdmin.role === 'super' ? 'Administrador Principal' : 'Administrador'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Usuário</label>
+                      <input
+                        type="text"
+                        value={profileForm.username}
+                        onChange={(e) => setProfileForm((prev) => ({ ...prev, username: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Nova Senha</label>
+                      <input
+                        type="password"
+                        value={profileForm.password}
+                        onChange={(e) => setProfileForm((prev) => ({ ...prev, password: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Confirmar Senha</label>
+                      <input
+                        type="password"
+                        value={profileForm.confirmPassword}
+                        onChange={(e) => setProfileForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <button
+                      onClick={handleUpdateProfile}
+                      className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                    >
+                      <Save className="w-5 h-5" />
+                      <span>Salvar Dados</span>
+                    </button>
+                  </div>
+                </div>
+
+                {isSuperAdmin && (
+                  <div className="bg-white rounded-xl border-2 border-amber-100 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-2xl font-bold text-amber-900">Administradores</h2>
+                        <p className="text-sm text-gray-500">Somente o administrador principal pode criar, alterar ou excluir</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {adminFormMode === 'create' ? 'Novo Administrador' : 'Editar Administrador'}
+                        </h3>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Usuário</label>
+                          <input
+                            type="text"
+                            value={adminForm.username}
+                            onChange={(e) => setAdminForm((prev) => ({ ...prev, username: e.target.value }))}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Senha {adminFormMode === 'edit' ? '(opcional)' : ''}</label>
+                          <input
+                            type="password"
+                            value={adminForm.password}
+                            onChange={(e) => setAdminForm((prev) => ({ ...prev, password: e.target.value }))}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Perfil</label>
+                          {adminFormMode === 'create' ? (
+                            <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                              Administrador
+                            </div>
+                          ) : (
+                            <select
+                              value={adminForm.role}
+                              onChange={(e) => setAdminForm((prev) => ({ ...prev, role: e.target.value as 'admin' | 'super' }))}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                            >
+                              <option value="admin">Administrador</option>
+                              <option value="super">Administrador Principal</option>
+                            </select>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={handleSaveAdmin}
+                            className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+                          >
+                            <Save className="w-5 h-5" />
+                            <span>Salvar</span>
+                          </button>
+                          {adminFormMode === 'edit' && (
+                            <button
+                              onClick={handleCancelAdminEdit}
+                              className="px-6 py-3 rounded-xl font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lista de Administradores</h3>
+                        {admins.length === 0 ? (
+                          <div className="text-sm text-gray-500">Nenhum administrador encontrado</div>
+                        ) : (
+                          <div className="space-y-3">
+                            {admins.map((admin) => (
+                              <div key={admin.id} className="flex items-center justify-between border border-amber-100 rounded-lg px-4 py-3">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{admin.username}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {admin.role === 'super' ? 'Administrador Principal' : 'Administrador'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleEditAdmin(admin)}
+                                    className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
+                                    disabled={currentAdmin?.id === admin.id}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteAdmin(admin.id)}
+                                    className={`p-2 rounded-lg transition-all ${
+                                      currentAdmin?.id === admin.id
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-red-100 hover:bg-red-200 text-red-700'
+                                    }`}
+                                    disabled={currentAdmin?.id === admin.id}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -23,6 +23,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
+    if (!admin.role) {
+      admin.role = admin.username === 'admin' ? 'super' : 'admin';
+      await admin.save();
+    }
+
     const isPasswordValid = await admin.validatePassword(password);
     console.log('🔑 Senha válida:', isPasswordValid);
 
@@ -32,7 +37,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: admin.id, username: admin.username },
+      { id: admin.id, username: admin.username, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -45,6 +50,7 @@ router.post('/login', async (req, res) => {
       admin: {
         id: admin.id,
         username: admin.username,
+        role: admin.role,
       },
     });
   } catch (error) {

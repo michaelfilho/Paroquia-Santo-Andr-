@@ -6,6 +6,7 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
 let authToken: string | null = localStorage.getItem('authToken');
+const ADMIN_PROFILE_KEY = 'adminProfile';
 
 const setAuthToken = (token: string) => {
   authToken = token;
@@ -15,6 +16,24 @@ const setAuthToken = (token: string) => {
 const clearAuthToken = () => {
   authToken = null;
   localStorage.removeItem('authToken');
+};
+
+const setAdminProfile = (admin: any) => {
+  localStorage.setItem(ADMIN_PROFILE_KEY, JSON.stringify(admin));
+};
+
+const getAdminProfile = () => {
+  const raw = localStorage.getItem(ADMIN_PROFILE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+const clearAdminProfile = () => {
+  localStorage.removeItem(ADMIN_PROFILE_KEY);
 };
 
 const getAuthHeaders = () => {
@@ -46,6 +65,9 @@ export const authAPI = {
       }
       
       setAuthToken(data.token);
+      if (data.admin) {
+        setAdminProfile(data.admin);
+      }
       return data;
     } catch (error) {
       console.error('Login error:', error);
@@ -64,6 +86,95 @@ export const authAPI = {
 
   logout: () => {
     clearAuthToken();
+    clearAdminProfile();
+  },
+};
+
+// Admins endpoints
+export const adminsAPI = {
+  getMe: async () => {
+    const response = await fetch(`${API_BASE_URL}/admins/me`, {
+      headers: getAuthHeaders(),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao buscar dados do admin');
+    }
+
+    return data;
+  },
+
+  updateMe: async (payload: any) => {
+    const response = await fetch(`${API_BASE_URL}/admins/me`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao atualizar dados do admin');
+    }
+
+    return data;
+  },
+
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/admins`, {
+      headers: getAuthHeaders(),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao buscar administradores');
+    }
+
+    return data;
+  },
+
+  create: async (payload: any) => {
+    const response = await fetch(`${API_BASE_URL}/admins`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao criar administrador');
+    }
+
+    return data;
+  },
+
+  update: async (id: string, payload: any) => {
+    const response = await fetch(`${API_BASE_URL}/admins/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao atualizar administrador');
+    }
+
+    return data;
+  },
+
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/admins/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao remover administrador');
+    }
+
+    return data;
   },
 };
 
@@ -693,4 +804,4 @@ export const eventPhotosAPI = {
   },
 };
 
-export { setAuthToken, clearAuthToken, getAuthHeaders };
+export { setAuthToken, clearAuthToken, getAuthHeaders, setAdminProfile, getAdminProfile, clearAdminProfile };

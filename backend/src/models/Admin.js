@@ -17,10 +17,17 @@ const Admin = sequelize.define('Admin', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'admin',
+  },
 }, {
   hooks: {
-    beforeCreate: async (admin) => {
-      admin.password = await bcrypt.hash(admin.password, 10);
+    beforeSave: async (admin) => {
+      if (admin.changed('password')) {
+        admin.password = await bcrypt.hash(admin.password, 10);
+      }
     },
   },
   timestamps: false, // Remover createdAt e updatedAt
