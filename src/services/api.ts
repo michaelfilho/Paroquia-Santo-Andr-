@@ -3,7 +3,8 @@
  * Gerencia todas as requisições da aplicação ao servidor Node.js
  */
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.paroquiataruma.com/api';
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 let authToken: string | null = localStorage.getItem('authToken');
 const ADMIN_PROFILE_KEY = 'adminProfile';
@@ -71,7 +72,7 @@ export const authAPI = {
       return data;
     } catch (error) {
       console.error('Login error:', error);
-      throw new Error('Erro ao conectar com o servidor. Verifique se o backend está rodando em localhost:5000');
+      throw new Error('Erro ao conectar com o servidor. Verifique se o backend está online.');
     }
   },
 
