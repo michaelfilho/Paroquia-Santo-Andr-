@@ -1096,6 +1096,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setContentForm(prev => ({ ...prev, content: value }));
     };
 
+  const toBool = (value: unknown) => value === true || value === 1 || value === '1';
+
   const groupEventsByMonth = (eventsList: Event[]) => {
     const grouped: { [key: string]: Event[] } = {};
     
@@ -1151,7 +1153,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       setEvents(eventsData || []);
       // Filtrar apenas eventos marcados como de inscrição para a aba específica
-      setInscriptionEvents((allAdminEvents || []).filter((e: Event) => e.isInscriptionEvent === true));
+      setInscriptionEvents((allAdminEvents || []).filter((e: Event) => toBool(e.isInscriptionEvent)));
       setChapels(chapelsData || []);
       setCLergy(clergyData || []);
       setGuides(guidesData || []);
@@ -1740,10 +1742,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   // Programações: isProgram = true (tudo que foi adicionado e não foi movido para eventos)
-  const programacoesFiltradas = events.filter((event) => event.isProgram === true && !event.isInscriptionEvent);
+  const programacoesFiltradas = events.filter((event) => toBool(event.isProgram) && !toBool(event.isInscriptionEvent));
 
   // Eventos: isProgram = false (eventos que foram movidos manualmente da programação)
-  const eventosFiltrados = events.filter((event) => event.isProgram === false && !event.isInscriptionEvent);
+  const eventosFiltrados = events.filter((event) => !toBool(event.isProgram) && !toBool(event.isInscriptionEvent));
 
   // Eventos com inscrição carregados diretamente (apenas os criados na aba de Inscrições)
   const eventosComInscricao = inscriptionEvents;

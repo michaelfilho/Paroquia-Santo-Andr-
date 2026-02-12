@@ -163,11 +163,10 @@ app.get('/api/public/inscription-events', async (req, res) => {
   try {
     const { Event, Inscription } = require('./models');
 
-    // Buscar SOMENTE eventos marcados como isInscriptionEvent, ativos E publicados
+    // Buscar eventos de inscricao publicados (independente de isActive)
     const events = await Event.findAll({
       where: {
         isInscriptionEvent: true,
-        isActive: true,
         published: true,
       },
       order: [['date', 'ASC']],

@@ -25,10 +25,15 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "sequelize": "^6.35.0",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
+    "eslint": "^8.57.0",
     "nodemon": "^3.0.1",
     "sequelize-cli": "^6.6.1"
+  },
+  "overrides": {
+    "glob": "^9.3.5",
+    "rimraf": "^4.4.1"
   }
 }
