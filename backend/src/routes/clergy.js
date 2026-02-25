@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const clergy = await ClergyMember.findAll({
-      order: [['createdAt', 'DESC']],
+      order: [['name', 'ASC']],
     });
     res.json(clergy);
   } catch (error) {
@@ -31,21 +31,21 @@ router.get('/:id', async (req, res) => {
 // CREATE clergy member
 router.post('/', async (req, res) => {
   try {
-    const { name, role, period, bio, email, phone, imageUrl, current } = req.body;
+    const { name, role, startYear, bio, email, phone, imageUrl, current } = req.body;
 
-    if (!name || !role || !period) {
-      return res.status(400).json({ message: 'Nome, função e período são obrigatórios' });
+    if (!name || !role || !startYear) {
+      return res.status(400).json({ message: 'Nome, função e ano de início são obrigatórios' });
     }
 
     const member = await ClergyMember.create({
       name,
       role,
-      period,
+      startYear,
       bio,
       email,
       phone,
       imageUrl,
-      current,
+      isCurrent: current,
     });
 
     res.status(201).json({

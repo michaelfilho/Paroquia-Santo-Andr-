@@ -79,7 +79,7 @@ router.get('/event/:eventId', async (req, res) => {
     const { eventId } = req.params;
     const photos = await EventPhoto.findAll({
       where: { eventId: eventId },
-      order: [['createdAt', 'DESC']]
+      order: [['id', 'DESC']]
     });
 
     res.json(photos);

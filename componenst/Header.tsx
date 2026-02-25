@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, Instagram, Church } from 'lucide-react';
+import { Menu, X, Instagram, ChevronDown } from 'lucide-react';
+import testeImg from '../Styles/img/brasao.png';
 
 interface HeaderProps {
   onNavigate?: (page: string) => void;
@@ -9,6 +10,7 @@ interface HeaderProps {
 export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,6 +42,7 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
       }
     }
     setIsMenuOpen(false);
+    setOpenDropdown(null);
   };
 
   const handleNavigate = (page: string) => {
@@ -48,33 +51,65 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     setIsMenuOpen(false);
+    setOpenDropdown(null);
   };
 
-  const navItems = [
-    { id: 'inicio', label: 'Início', type: 'scroll' },
-    { id: 'sobre', label: 'Sobre Nós', type: 'scroll' },
-    { id: 'clero', label: 'Clero', type: 'scroll' },
-    { id: 'mapa', label: 'Mapa', type: 'scroll' },
-    { id: 'eventos-realizados', label: 'Eventos Realizados', type: 'scroll' },
-    { id: 'eventos-futuros', label: 'Programações', type: 'scroll' },
-    { id: 'guias', label: 'Guias', type: 'page' },
-    { id: 'inscricoes', label: 'Inscrições', type: 'page' },
+  const handleAction = (item: any) => {
+    if (item.type === 'scroll') {
+      scrollToSection(item.id);
+    } else {
+      handleNavigate(item.id);
+    }
+  };
+
+  const toggleDropdown = (label: string) => {
+    setOpenDropdown(openDropdown === label ? null : label);
+  };
+
+  const menuStructure = [
+    { label: 'Início', id: 'inicio', type: 'scroll' },
+    {
+      label: 'Paróquia',
+      isDropdown: true,
+      children: [
+        { label: 'Clero', id: 'clero', type: 'scroll' },
+        { label: 'Guias', id: 'guias', type: 'page' },
+        { label: 'Matriz', id: 'matriz', type: 'scroll' },
+        { label: 'Movimentos/Pastorais', id: 'movimentos', type: 'page' },
+        { label: 'Inscrições', id: 'inscricoes', type: 'page' },
+        { label: 'Brasão', id: 'brasao', type: 'page' },
+        { label: 'Contato', id: 'contato', type: 'page' },
+      ],
+    },
+    {
+      label: 'História',
+      isDropdown: true,
+      children: [
+        { label: 'Sobre nós', id: 'sobre', type: 'scroll' },
+        { label: 'História Completa', id: 'historia-completa', type: 'page' },
+        { label: 'Antigos Padres', id: 'antigos-padres', type: 'page' },
+      ],
+    },
+    { label: 'Programação', id: 'eventos-futuros', type: 'scroll' },
+    { label: 'Galeria', id: 'eventos-realizados', type: 'scroll' },
+    { label: 'Pedidos de Oração', id: 'pedidos-oracao', type: 'page' },
+    { label: 'Dízimo', id: 'dizimo', type: 'page' },
+    { label: 'Notícias', id: 'noticias', type: 'page' },
   ];
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-amber-100' 
-          : 'bg-white/90 backdrop-blur-md'
-      }`}
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-amber-100'
+        : 'bg-white/90 backdrop-blur-md'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => scrollToSection('inicio')}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 overflow-hidden bg-gradient-to-br from-amber-600 to-amber-700">
-              <Church className="w-7 h-7 text-white" />
+            <div className="w-16 h-16 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
+              <img src={testeImg} alt="Detalhes Paróquia Santo André" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-amber-900 text-lg tracking-tight">Paróquia Santo André</h1>
@@ -83,32 +118,61 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => item.type === 'scroll' ? scrollToSection(item.id) : handleNavigate(item.id)}
-                className="relative text-gray-700 hover:text-amber-700 transition-all duration-300 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-50 group"
-              >
-                {item.label}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-amber-700 group-hover:w-3/4 transition-all duration-300"></span>
-              </button>
-            ))}
+          <nav className="hidden xl:flex items-center space-x-1">
+            {menuStructure.map((item, idx) => {
+              if (item.isDropdown) {
+                return (
+                  <div key={idx} className="relative group">
+                    <button
+                      className="flex items-center space-x-1 text-gray-700 hover:text-amber-700 transition-all duration-300 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-amber-50"
+                    >
+                      <span>{item.label}</span>
+                      <ChevronDown className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+                    </button>
+                    {/* Dropdown Menu */}
+                    <div className="absolute left-0 mt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-left scale-95 group-hover:scale-100">
+                      <div className="bg-white rounded-xl shadow-xl border border-amber-100 overflow-hidden py-2">
+                        {item.children?.map((child, cIdx) => (
+                          <button
+                            key={cIdx}
+                            onClick={() => handleAction(child)}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleAction(item)}
+                  className="relative text-gray-700 hover:text-amber-700 transition-all duration-300 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-amber-50 group"
+                >
+                  {item.label}
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-amber-700 group-hover:w-3/4 transition-all duration-300"></span>
+                </button>
+              );
+            })}
             <a
               href="https://www.instagram.com/paroquiasantoandre.taruma/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white px-5 py-2.5 rounded-full hover:shadow-2xl transition-all duration-300 hover:scale-105 ml-4"
+              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white px-4 py-2 rounded-full hover:shadow-2xl transition-all duration-300 hover:scale-105 ml-4"
             >
               <Instagram className="w-4 h-4" />
               <span className="text-sm font-semibold">Instagram</span>
             </a>
           </nav>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - shows on xl and below */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
+            className="xl:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -116,21 +180,50 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-gray-200">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => item.type === 'scroll' ? scrollToSection(item.id) : handleNavigate(item.id)}
-                className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-amber-700 transition-colors"
-              >
-                {item.label}
-              </button>
-            ))}
+          <nav className="xl:hidden py-4 border-t border-gray-200 max-h-[80vh] overflow-y-auto">
+            {menuStructure.map((item, idx) => {
+              if (item.isDropdown) {
+                return (
+                  <div key={idx} className="border-b border-gray-100 last:border-0">
+                    <button
+                      onClick={() => toggleDropdown(item.label)}
+                      className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-amber-700 transition-colors font-medium"
+                    >
+                      <span>{item.label}</span>
+                      <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${openDropdown === item.label ? 'rotate-180' : ''}`} />
+                    </button>
+                    {openDropdown === item.label && (
+                      <div className="bg-gray-50 py-2">
+                        {item.children?.map((child, cIdx) => (
+                          <button
+                            key={cIdx}
+                            onClick={() => handleAction(child)}
+                            className="block w-full text-left px-8 py-2 text-sm text-gray-600 hover:text-amber-700 transition-colors"
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleAction(item)}
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 hover:text-amber-700 transition-colors border-b border-gray-100 last:border-0 font-medium"
+                >
+                  {item.label}
+                </button>
+              );
+            })}
             <a
               href="https://instagram.com/paroquiasantoandre"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 mx-4 mt-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all justify-center"
+              className="flex items-center space-x-2 mx-4 mt-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all justify-center"
             >
               <Instagram className="w-5 h-5" />
               <span className="font-medium">Siga no Instagram</span>

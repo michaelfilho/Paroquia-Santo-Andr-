@@ -1,12 +1,89 @@
-import { Church, Heart, Users, BookOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Church, Heart, Flame, BookOpen } from 'lucide-react';
+import { contentAPI } from '../src/services/api';
 
-export function About() {
+interface AboutProps {
+  litCandlesCount?: number;
+}
+
+export function About({ litCandlesCount = 0 }: AboutProps) {
+  const [historyText, setHistoryText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    chapelsCount: '5',
+    pastoralGroups: '10+',
+    yearsHistory: '72',
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const [aboutData, statsData] = await Promise.all([
+          contentAPI.getByKey('about'),
+          contentAPI.getByKey('about_stats'),
+        ]);
+
+        if (aboutData && aboutData.content) {
+          setHistoryText(aboutData.content);
+        }
+
+        if (statsData?.content) {
+          try {
+            const parsed = JSON.parse(statsData.content);
+            setStats({
+              chapelsCount: String(parsed.chapelsCount ?? '5'),
+              pastoralGroups: String(parsed.pastoralGroups ?? '10+'),
+              yearsHistory: String(parsed.yearsHistory ?? '72'),
+            });
+          } catch {
+            // mantém padrão
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar texto sobre a história:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContent();
+  }, []);
+
+  // Split content by paragraphs or lines to render properly
+  const renderContent = () => {
+    if (loading) {
+      return <div className="animate-pulse flex flex-col gap-4">
+        <div className="h-4 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+      </div>;
+    }
+
+    if (!historyText) {
+      return (
+        <>
+          <p className="text-gray-600 leading-relaxed text-lg text-justify">
+            A Paróquia Santo André foi fundada em 1952, tornando-se um pilar fundamental da comunidade católica em Tarumã. Nossa história começa com um pequeno grupo de fiéis que se reuniam para celebrar a fé e construir uma comunidade baseada nos valores cristãos.
+          </p>
+          <p className="text-gray-600 leading-relaxed text-lg text-justify mt-4">
+            Ao longo de mais de 70 anos, crescemos e evoluímos, sempre mantendo nosso compromisso com o serviço, a evangelização e o amor ao próximo. Nossa igreja matriz, construída em 1958, foi restaurada em 2010.
+          </p>
+        </>
+      );
+    }
+
+    return historyText.split('\n').filter(p => p.trim() !== '').map((paragraph, index) => (
+      <p key={index} className="text-gray-600 leading-relaxed text-lg text-justify mt-4">
+        {paragraph}
+      </p>
+    ));
+  };
+
   return (
-    <section id="sobre" className="py-24 bg-gradient-to-b from-white via-amber-50/30 to-white relative overflow-hidden">
+    <section id="sobre" className="py-24 bg-white relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl -z-0" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-300/10 rounded-full blur-3xl -z-0" />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-20">
@@ -32,46 +109,34 @@ export function About() {
               História da Paróquia Santo André
             </h3>
 
-            <p className="text-gray-600 leading-relaxed text-lg text-justify">
-              A Paróquia Santo André foi fundada em 1952, tornando-se um pilar fundamental da comunidade católica em Tarumã. Nossa história começa com um pequeno grupo de fiéis que se reuniam para celebrar a fé e construir uma comunidade baseada nos valores cristãos.
-            </p>
-
-            <p className="text-gray-600 leading-relaxed text-lg text-justify">
-              Ao longo de mais de 70 anos, crescemos e evoluímos, sempre mantendo nosso compromisso com o serviço, a evangelização e o amor ao próximo. Nossa igreja matriz, construída em 1958, foi restaurada em 2010, preservando sua arquitetura histórica enquanto moderniza suas instalações para melhor servir nossa comunidade.
-            </p>
-
-            <p className="text-gray-600 leading-relaxed text-lg text-justify">
-              Hoje, a Paróquia Santo André é composta por várias capelas distribuídas pela região de Tarumã, servindo milhares de fiéis. Oferecemos missas diárias, catequese, grupos de oração, atividades pastorais e ações sociais que impactam positivamente toda a comunidade.
-            </p>
-
-            <p className="text-gray-600 leading-relaxed text-lg text-justify">
-              Nossa missão é continuar sendo uma casa acolhedora para todos que buscam fortalecer sua fé, encontrar comunidade e servir ao próximo, seguindo o exemplo de Santo André, nosso padroeiro, conhecido por seu zelo em levar outros a Cristo.
-            </p>
+            <div className="space-y-4">
+              {renderContent()}
+            </div>
           </div>
 
           {/* Stats Cards */}
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <Church className="w-14 h-14 text-amber-700 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">5</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">{stats.chapelsCount}</h4>
               <p className="text-gray-600 font-medium">Capelas na Região</p>
             </div>
 
-            <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-600 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
-              <Users className="w-14 h-14 text-amber-600 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">9.000+</h4>
-              <p className="text-gray-600 font-medium">Fiéis Ativos</p>
+            <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-600 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 tracking-tight">
+              <Flame className="w-14 h-14 text-amber-500 mb-5 fill-amber-500/20" />
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">{litCandlesCount}</h4>
+              <p className="text-gray-600 font-medium tracking-wide">Velas Acesas</p>
             </div>
 
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-800 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <Heart className="w-14 h-14 text-amber-800 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">10+</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">{stats.pastoralGroups}</h4>
               <p className="text-gray-600 font-medium">Grupos Pastorais</p>
             </div>
 
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <BookOpen className="w-14 h-14 text-amber-700 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">72</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">{stats.yearsHistory}</h4>
               <p className="text-gray-600 font-medium">Anos de História</p>
             </div>
           </div>

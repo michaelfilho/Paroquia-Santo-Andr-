@@ -3,28 +3,26 @@ const sequelize = require('../config/sequelize');
 
 const Guide = sequelize.define('Guide', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.CHAR(36),
     primaryKey: true,
+    defaultValue: DataTypes.UUIDV4
   },
   title: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(255)
   },
-  content: {
-    type: DataTypes.TEXT,
-    allowNull: false,
+  description: {
+    type: DataTypes.TEXT
   },
   details: {
-    type: DataTypes.JSON,
-    defaultValue: [],
+    type: DataTypes.JSON
   },
-  icon: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
+  imageUrl: {
+    type: DataTypes.STRING(255),
+    field: 'image_url'
+  }
 }, {
-  timestamps: true,
+  tableName: 'guides',
+  timestamps: false
 });
 
 module.exports = Guide;

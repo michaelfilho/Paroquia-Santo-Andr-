@@ -5,6 +5,7 @@ const path = require('path');
 const sequelize = require('./config/sequelize');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
+const scheduleRoutes = require('./routes/schedules');
 const chapelRoutes = require('./routes/chapels');
 const clergyRoutes = require('./routes/clergy');
 const guideRoutes = require('./routes/guides');
@@ -13,6 +14,11 @@ const contentRoutes = require('./routes/content');
 const uploadRoutes = require('./routes/upload');
 const eventPhotosRoutes = require('./routes/event-photos');
 const adminRoutes = require('./routes/admins');
+const movementsRoutes = require('./routes/movements');
+const formerPriestsRoutes = require('./routes/formerpriests');
+const newsRoutes = require('./routes/news');
+const carouselRoutes = require('./routes/carousel');
+const registrationLinksRoutes = require('./routes/registration-links');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
@@ -36,6 +42,7 @@ const corsOptions = {
     'https://paroquiataruma.com',
     'https://www.paroquiataruma.com',
     'https://www.api.paroquiataruma.com',
+    'https://admin.paroquiataruma.com',
     process.env.FRONTEND_URL,
   ].filter(Boolean),
   credentials: true,
@@ -80,7 +87,7 @@ app.get('/api/public/event-photos/:eventId', async (req, res) => {
     const { EventPhoto } = require('./models');
     const photos = await EventPhoto.findAll({
       where: { eventId: req.params.eventId },
-      order: [['createdAt', 'DESC']]
+      order: [['id', 'DESC']]
     });
     res.json(photos);
   } catch (error) {
@@ -92,7 +99,7 @@ app.get('/api/public/event-photos/:eventId', async (req, res) => {
 // Public events endpoint
 app.get('/api/public/events', async (req, res) => {
   try {
-    const { Event, Inscription } = require('./models');
+    const { Event, EventPhoto } = require('./models');
     const now = new Date();
     const startOfToday = new Date(now);
     startOfToday.setHours(0, 0, 0, 0);
@@ -117,142 +124,188 @@ app.get('/api/public/events', async (req, res) => {
       return new Date('invalid');
     };
 
-    // Buscar eventos que devem aparecer publicamente
     const events = await Event.findAll({
-      where: { isInscriptionEvent: false },
       order: [['date', 'ASC']],
+      include: [{ model: EventPhoto, as: 'photos', attributes: ['id'] }]
     });
 
-    // Filtrar apenas eventos que devem aparecer ao público
     const publicEvents = events.filter((event) => {
-      const eventDate = toDateOnly(event.date);
-
-      // Programações: aparecem se publicadas
-      if (event.isProgram === true && event.published === true) {
-        return true;
-      }
-
-      // Eventos realizados: aparecem somente se publicados manualmente (isProgram false)
-      if (event.isProgram === false && event.published === true) {
-        return true;
-      }
-
-      return false;
+      return event.isPublished === true;
+    }).map(e => {
+      const json = e.toJSON();
+      json.hasPhotos = json.photos && json.photos.length > 0;
+      return json;
     });
 
-    const eventsWithCounts = await Promise.all(
-      publicEvents.map(async (event) => {
-        const confirmedCount = await Inscription.count({
-          where: { eventId: event.id, status: 'Confirmado' },
-        });
-        return {
-          ...event.toJSON(),
-          confirmedInscriptions: confirmedCount,
-        };
-      })
-    );
-
-    res.json(eventsWithCounts);
+    res.json(publicEvents);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar eventos', error: error.message });
   }
 });
 
-// Public inscription events endpoint - SOMENTE eventos criados na aba Inscrições
+app.use('/api/schedules', scheduleRoutes);
+
 app.get('/api/public/inscription-events', async (req, res) => {
   try {
     const { Event, Inscription } = require('./models');
 
-    // Buscar eventos de inscricao publicados (independente de isActive)
     const events = await Event.findAll({
       where: {
+        isPublished: true,
         isInscriptionEvent: true,
-        published: true,
+        isActive: true,
       },
       order: [['date', 'ASC']],
     });
 
-    // Adicionar contagem de inscrições
-    const eventsWithCounts = await Promise.all(
+    const eventsWithAvailability = await Promise.all(
       events.map(async (event) => {
         const confirmedCount = await Inscription.count({
-          where: { eventId: event.id, status: 'Confirmado' },
+          where: {
+            eventId: event.id,
+            status: 'Confirmado',
+          },
         });
-        
-        const availableSpots = event.maxParticipants 
-          ? Math.max(0, event.maxParticipants - confirmedCount)
-          : null;
+
+        const maxParticipants = Number(event.maxParticipants || 0);
+        const availableSpots = Math.max(maxParticipants - confirmedCount, 0);
+        const status = maxParticipants > 0 && availableSpots > 0 ? 'open' : 'closed';
 
         return {
           ...event.toJSON(),
           confirmedInscriptions: confirmedCount,
-          availableSpots: availableSpots,
-          status: event.maxParticipants && confirmedCount >= event.maxParticipants ? 'closed' : 'open',
+          availableSpots,
+          status,
         };
       })
     );
 
-    res.json(eventsWithCounts);
+    res.json(eventsWithAvailability);
   } catch (error) {
-    console.error('Erro ao buscar eventos de inscrição:', error);
     res.status(500).json({ message: 'Erro ao buscar eventos de inscrição', error: error.message });
   }
 });
 
-// Public inscription creation route (sem autenticação)
-app.post('/api/public/inscriptions', async (req, res) => {
+// Public routes for new CMS entities
+app.use('/api/public/movements', movementsRoutes);
+app.use('/api/public/former-priests', formerPriestsRoutes);
+app.use('/api/public/news', newsRoutes);
+app.use('/api/public/carousel', carouselRoutes);
+app.get('/api/public/registration-links', async (req, res) => {
   try {
-    const { eventId, name, phone } = req.body;
-
-    if (!eventId || !name || !phone) {
-      return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
-    }
-
-    const { Inscription, Event } = require('./models');
-
-    // Verify if event exists
-    const event = await Event.findByPk(eventId);
-    if (!event) {
-      return res.status(404).json({ message: 'Evento não encontrado' });
-    }
-
-    if (!event.acceptsRegistration) {
-      return res.status(400).json({ message: 'Este evento não aceita inscrições' });
-    }
-
-    // VALIDAÇÃO DE LIMITE DE VAGAS
-    if (event.maxParticipants && event.maxParticipants > 0) {
-      const confirmedCount = await Inscription.count({
-        where: { 
-          eventId: eventId, 
-          status: 'Confirmado' 
-        }
-      });
-
-      if (confirmedCount >= event.maxParticipants) {
-        return res.status(400).json({ 
-          message: 'Vagas esgotadas para este evento',
-          availableSpots: 0,
-          totalSpots: event.maxParticipants
-        });
-      }
-    }
-
-    const inscription = await Inscription.create({
-      eventId,
-      name,
-      email: null,
-      phone,
-      status: 'Pendente',
+    const { RegistrationLink } = require('./models');
+    const items = await RegistrationLink.findAll({
+      where: { isActive: true },
+      order: [['date', 'ASC'], ['createdAt', 'DESC']],
     });
-
-    res.status(201).json({
-      message: 'Inscrição realizada com sucesso',
-      inscription,
-    });
+    res.json(items);
   } catch (error) {
-    console.error('Erro ao criar inscrição pública:', error);
-    res.status(500).json({ message: 'Erro ao criar inscrição', error: error.message });
+    res.status(500).json({ message: 'Erro ao buscar inscrições públicas', error: error.message });
+  }
+});
+
+// Public GET routes for other CMS entities
+app.get('/api/public/chapels', async (req, res) => {
+  try {
+    const { Chapel } = require('./models');
+    const chapels = await Chapel.findAll({ order: [['name', 'ASC']] });
+    res.json(chapels);
+  } catch (error) {
+    console.error('Erro capelas:', error);
+    res.status(500).json({ message: 'Erro ao buscar capelas' });
+  }
+});
+
+app.get('/api/public/clergy', async (req, res) => {
+  try {
+    const { ClergyMember } = require('./models');
+    const clergy = await ClergyMember.findAll({ order: [['name', 'ASC']] });
+    res.json(clergy);
+  } catch (error) {
+    console.error('Erro clero:', error);
+    res.status(500).json({ message: 'Erro ao buscar clero' });
+  }
+});
+
+app.get('/api/public/guides', async (req, res) => {
+  try {
+    const { Guide } = require('./models');
+    const guides = await Guide.findAll({ order: [['title', 'ASC']] });
+    res.json(guides);
+  } catch (error) {
+    console.error('Erro guias:', error);
+    res.status(500).json({ message: 'Erro ao buscar guias' });
+  }
+});
+
+app.get('/api/public/content', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const texts = await ContentText.findAll();
+    res.json(texts);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar textos' });
+  }
+});
+
+app.get('/api/public/content/:key', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const text = await ContentText.findOne({ where: { key: req.params.key } });
+    if (!text) return res.status(404).json({ message: 'Texto não encontrado' });
+    res.json(text);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar texto' });
+  }
+});
+
+app.get('/api/public/candles/count', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const counter = await ContentText.findOne({ where: { key: 'lit_candles_count' } });
+    const count = counter ? Number(counter.content || '0') : 0;
+    res.json({ count: Number.isNaN(count) ? 0 : count });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar contador de velas', error: error.message });
+  }
+});
+
+app.post('/api/public/candles/increment', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const counter = await ContentText.findOne({ where: { key: 'lit_candles_count' } });
+
+    if (!counter) {
+      const created = await ContentText.create({
+        key: 'lit_candles_count',
+        title: 'Contador de Velas Acesas',
+        content: '1',
+      });
+      return res.json({ count: 1, recordId: created.id });
+    }
+
+    const current = Number(counter.content || '0');
+    const next = (Number.isNaN(current) ? 0 : current) + 1;
+    await counter.update({ content: String(next) });
+    res.json({ count: next });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao incrementar contador de velas', error: error.message });
+  }
+});
+
+app.post('/api/public/prayer-requests', async (req, res) => {
+  try {
+    const { PrayerRequest } = require('./models');
+    const intention = typeof req.body?.intention === 'string' ? req.body.intention.trim() : '';
+
+    if (!intention) {
+      return res.status(400).json({ message: 'Intenção de oração é obrigatória' });
+    }
+
+    const prayerRequest = await PrayerRequest.create({ intention });
+    res.status(201).json({ message: 'Pedido de oração registrado com sucesso', prayerRequest });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao registrar pedido de oração', error: error.message });
   }
 });
 
@@ -265,6 +318,11 @@ app.use('/api/inscriptions', authMiddleware, inscriptionRoutes);
 app.use('/api/content', authMiddleware, contentRoutes);
 app.use('/api/event-photos', authMiddleware, eventPhotosRoutes);
 app.use('/api/admins', authMiddleware, adminRoutes);
+app.use('/api/movements', authMiddleware, movementsRoutes);
+app.use('/api/former-priests', authMiddleware, formerPriestsRoutes);
+app.use('/api/news', authMiddleware, newsRoutes);
+app.use('/api/carousel', authMiddleware, carouselRoutes);
+app.use('/api/registration-links', authMiddleware, registrationLinksRoutes);
 
 // Serve event photos
 app.use('/api/uploads/eventos', cors(corsOptions), express.static(path.join(__dirname, '../../Styles/img/eventos'), {
@@ -289,20 +347,62 @@ const initializeServer = async () => {
     console.log('📊 Conectando ao banco de dados...');
     await sequelize.authenticate();
     console.log('✅ Banco de dados autenticado');
-    // Ensure existing rows in `events` have unique, non-null ids before running
+
+    const ensureSQLiteColumns = async () => {
+      if (!sequelize.getDialect || sequelize.getDialect() !== 'sqlite') return;
+
+      const ensureColumns = async (tableName, columns) => {
+        const [info] = await sequelize.query(`PRAGMA table_info(${tableName});`);
+        const existing = new Set((info || []).map((column) => column.name));
+
+        for (const column of columns) {
+          if (existing.has(column.name)) continue;
+          const sql = `ALTER TABLE ${tableName} ADD COLUMN ${column.name} ${column.type};`;
+          await sequelize.query(sql);
+          console.log(`🔧 Coluna adicionada: ${tableName}.${column.name}`);
+        }
+      };
+
+      await ensureColumns('chapels', [
+        { name: 'coordinator', type: 'TEXT' },
+        { name: 'phone', type: 'TEXT' },
+        { name: 'email', type: 'TEXT' },
+        { name: 'description', type: 'TEXT' },
+      ]);
+
+      await ensureColumns('news', [
+        { name: 'summary', type: 'TEXT' },
+      ]);
+
+      await ensureColumns('old_priests', [
+        { name: 'subtext', type: 'TEXT' },
+      ]);
+
+      await ensureColumns('carousel', [
+        { name: 'button_text', type: "TEXT DEFAULT 'Saiba Mais'" },
+        { name: 'title_highlight', type: 'TEXT' },
+        { name: 'title_color', type: "TEXT DEFAULT '#FFFFFF'" },
+        { name: 'title_color_end', type: "TEXT DEFAULT '#F59E0B'" },
+        { name: 'subtitle_color', type: "TEXT DEFAULT '#F3F4F6'" },
+        { name: 'link_color', type: "TEXT DEFAULT '#FFFFFF'" },
+      ]);
+    };
+
+    await ensureSQLiteColumns();
+    // Ensure existing rows in key tables have unique, non-null ids before running
     // `sync({ alter: true })` — SQLite/Sequelize may create a backup table and
     // copy data, which fails if there are duplicate/null primary keys.
-    const ensureUniqueEventIds = async () => {
+    const ensureUniqueIdsForTable = async (tableName, label) => {
       try {
         // Only run this for SQLite where the issue was observed
         if (sequelize.getDialect && sequelize.getDialect() !== 'sqlite') return;
 
-        console.log('🔍 Verificando ids da tabela `events` (pre-sync)...');
+        console.log(`🔍 Verificando ids da tabela \`${label}\` (pre-sync)...`);
         // Get all rows with their rowid and id
-        const [rows] = await sequelize.query('SELECT rowid, id FROM events;');
+        const [rows] = await sequelize.query(`SELECT rowid, id FROM ${tableName};`);
 
         if (!rows || rows.length === 0) {
-          console.log('ℹ️  Tabela `events` vazia — nada a fazer');
+          console.log(`ℹ️  Tabela \`${label}\` vazia — nada a fazer`);
           return;
         }
 
@@ -316,10 +416,10 @@ const initializeServer = async () => {
           if (id === null || id === undefined || id === '') {
             // Assign a new uuid immediately
             const newId = crypto.randomUUID();
-            await sequelize.query('UPDATE events SET id = :newId WHERE rowid = :rid;', {
+            await sequelize.query(`UPDATE ${tableName} SET id = :newId WHERE rowid = :rid;`, {
               replacements: { newId, rid },
             });
-            console.log(`🔧 Preenchido id nulo para rowid=${rid}`);
+            console.log(`🔧 [${label}] Preenchido id nulo para rowid=${rid}`);
             // add to map
             idMap.set(newId, [rid]);
             continue;
@@ -336,22 +436,23 @@ const initializeServer = async () => {
             for (let i = 1; i < occ.length; i++) {
               const rid = occ[i];
               const newId = crypto.randomUUID();
-              await sequelize.query('UPDATE events SET id = :newId WHERE rowid = :rid;', {
+              await sequelize.query(`UPDATE ${tableName} SET id = :newId WHERE rowid = :rid;`, {
                 replacements: { newId, rid },
               });
-              console.log(`🔧 Corrigido id duplicado (original=${id}) para rowid=${rid}`);
+              console.log(`🔧 [${label}] Corrigido id duplicado (original=${id}) para rowid=${rid}`);
             }
           }
         }
 
-        console.log('✅ Verificação de ids concluída');
+        console.log(`✅ Verificação de ids concluída para \`${label}\``);
       } catch (err) {
-        console.error('❌ Falha ao garantir ids únicos em `events`:', err.message || err);
+        console.error(`❌ Falha ao garantir ids únicos em \`${label}\`:`, err.message || err);
         // don't rethrow — sync should still run and surface errors if any
       }
     };
 
-    await ensureUniqueEventIds();
+    await ensureUniqueIdsForTable('events', 'events');
+    await ensureUniqueIdsForTable('news', 'news');
 
     console.log('🔄 Sincronizando schema...');
     let foreignKeysDisabled = false;
@@ -362,7 +463,7 @@ const initializeServer = async () => {
         foreignKeysDisabled = true;
       }
 
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       console.log('✅ Schema sincronizado');
     } finally {
       if (foreignKeysDisabled) {
@@ -378,7 +479,7 @@ const initializeServer = async () => {
     console.log('🌱 Verificando conteúdo padrão...');
     await seedDefaultContent();
     console.log('✅ Conteúdo padrão verificado');
-    
+
     console.log(`🚀 Iniciando servidor na porta ${PORT}...`);
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Servidor ATIVO em http://localhost:${PORT}`);
@@ -397,13 +498,13 @@ const initializeServer = async () => {
         }
       }, 10 * 60 * 1000); // 10 minutos
     });
-    
+
     server.on('error', (err) => {
       console.error('❌ ERRO NO SERVIDOR:', err.message);
       console.error(err);
       process.exit(1);
     });
-    
+
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error.message);
     console.error(error);

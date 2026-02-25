@@ -26,15 +26,10 @@ export function Clergy() {
   const loadClergy = async () => {
     try {
       const data = await clergyAPI.getAll();
-      // Se houver dados da API, usa eles; senão usa os padrões
-      if (data && data.length > 0) {
-        setClergyMembers(data);
-      } else {
-        setClergyMembers(getDefaultClergy());
-      }
+      setClergyMembers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar clero:', error);
-      setClergyMembers(getDefaultClergy());
+      setClergyMembers([]);
     } finally {
       setLoading(false);
     }
@@ -118,9 +113,8 @@ export function Clergy() {
         <ImageWithFallback
           src={member.imageUrl}
           alt={member.name}
-          className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${
-            member.current ? 'object-[20%_20%]' : 'object-center'
-          }`}
+          className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${member.current ? 'object-[20%_20%]' : 'object-center'
+            }`}
         />
         {member.current && (
           <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
@@ -172,10 +166,10 @@ export function Clergy() {
   );
 
   // Filtrar membros por role (usando os dados do estado)
-  const pope = clergyMembers.filter(m => m.role === 'Papa');
-  const bishops = clergyMembers.filter(m => m.role === 'Bispo');
-  const priests = clergyMembers.filter(m => m.role === 'Sacerdote' || m.role === 'Pároco');
-  const vicars = clergyMembers.filter(m => m.role === 'Vigário Paroquial');
+  const pope = clergyMembers.filter(m => m.role === 'Papa' && m.current);
+  const bishops = clergyMembers.filter(m => m.role === 'Bispo' && m.current);
+  const priests = clergyMembers.filter(m => (m.role === 'Sacerdote' || m.role === 'Pároco') && m.current);
+  const vicars = clergyMembers.filter(m => m.role === 'Vigário Paroquial' && m.current);
 
   if (loading) {
     return (
@@ -183,6 +177,19 @@ export function Clergy() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center">
             <p className="text-gray-500">Carregando...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (clergyMembers.length === 0) {
+    return (
+      <section id="clero" className="py-24 bg-gradient-to-b from-white to-amber-50/30">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-5xl md:text-6xl font-bold text-amber-900 mb-6">Nosso Clero</h2>
+            <p className="text-gray-500">Nenhum membro cadastrado no momento.</p>
           </div>
         </div>
       </section>

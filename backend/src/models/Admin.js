@@ -5,36 +5,41 @@ const bcrypt = require('bcryptjs');
 const Admin = sequelize.define('Admin', {
   id: {
     type: DataTypes.INTEGER,
-    autoIncrement: true,
     primaryKey: true,
+    autoIncrement: true
   },
   username: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(100),
     allowNull: false,
-    unique: true,
+    unique: true
   },
   password: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
   role: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'admin',
-  },
+    type: DataTypes.ENUM('superadmin', 'admin'),
+    defaultValue: 'admin'
+  }
 }, {
+  tableName: 'admins',
+  timestamps: false,
   hooks: {
-    beforeSave: async (admin) => {
-      if (admin.changed('password')) {
+    beforeCreate: async (admin) => {
+      if (admin.password) {
         admin.password = await bcrypt.hash(admin.password, 10);
       }
     },
-  },
-  timestamps: false, // Remover createdAt e updatedAt
+    beforeUpdate: async (admin) => {
+      if (admin.changed('password')) {
+        admin.password = await bcrypt.hash(admin.password, 10);
+      }
+    }
+  }
 });
 
 Admin.prototype.validatePassword = async function (password) {
-  return bcrypt.compare(password, this.password);
+  return await bcrypt.compare(password, this.password);
 };
 
 module.exports = Admin;

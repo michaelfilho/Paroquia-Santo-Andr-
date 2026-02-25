@@ -21,22 +21,16 @@ export function Guides() {
   const loadGuides = async () => {
     try {
       const data = await guidesAPI.getAll();
-      
-      if (data && data.length > 0) {
-        // Mapear dados da API para incluir ícones
-        const guidesWithIcons = data.map((guide: any) => ({
-          ...guide,
-          icon: getIconByTitle(guide.title),
-          details: typeof guide.details === 'string' ? JSON.parse(guide.details) : guide.details || []
-        }));
-        setGuides(guidesWithIcons);
-      } else {
-        // Fallback para dados padrão se API falhar ou retornar vazio
-        setGuides(getDefaultGuides());
-      }
+
+      const guidesWithIcons = (Array.isArray(data) ? data : []).map((guide: any) => ({
+        ...guide,
+        icon: getIconByTitle(guide.title),
+        details: typeof guide.details === 'string' ? JSON.parse(guide.details) : guide.details || []
+      }));
+      setGuides(guidesWithIcons);
     } catch (error) {
       console.error('Erro ao carregar guias:', error);
-      setGuides(getDefaultGuides());
+      setGuides([]);
     }
   };
 
@@ -155,6 +149,17 @@ export function Guides() {
     setExpandedGuide(expandedGuide === idStr ? null : idStr);
   };
 
+  if (guides.length === 0) {
+    return (
+      <section id="guias" className="py-24 bg-gradient-to-b from-amber-50/30 to-white">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-5xl md:text-6xl font-bold text-amber-900 mb-6">Guias Paroquiais</h2>
+          <p className="text-gray-500">Nenhum guia cadastrado no momento.</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="guias" className="py-24 bg-gradient-to-b from-amber-50/30 to-white">
       <div className="max-w-6xl mx-auto px-4">
@@ -182,9 +187,8 @@ export function Guides() {
                     {guide.icon}
                   </div>
                   <ChevronDown
-                    className={`w-6 h-6 text-amber-600 transition-transform duration-300 ${
-                      expandedGuide === String(guide.id) ? 'rotate-180' : ''
-                    }`}
+                    className={`w-6 h-6 text-amber-600 transition-transform duration-300 ${expandedGuide === String(guide.id) ? 'rotate-180' : ''
+                      }`}
                   />
                 </div>
                 <h3 className="text-xl font-bold text-amber-900 mb-2">
@@ -221,9 +225,24 @@ export function Guides() {
             Entre em contato com a paróquia para obter mais informações sobre qualquer um dos nossos guias ou programas.
           </p>
           <a
-            href="https://wa.me/551432345678"
-            className="inline-block bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105"
+            href="https://wa.me/5518997994927"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1"
           >
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5"
+            >
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
             Entre em Contato
           </a>
         </div>

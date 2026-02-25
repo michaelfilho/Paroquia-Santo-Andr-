@@ -3,44 +3,46 @@ const sequelize = require('../config/sequelize');
 
 const ClergyMember = sequelize.define('ClergyMember', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.CHAR(36),
     primaryKey: true,
+    defaultValue: DataTypes.UUIDV4
   },
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
   role: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.ENUM('Pároco', 'Vigário Paroquial', 'Administrador', 'Frei'),
+    allowNull: false
   },
-  period: {
-    type: DataTypes.STRING,
-    allowNull: false,
+  startYear: {
+    type: DataTypes.STRING(10),
+    field: 'start_year'
   },
   bio: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  phone: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: DataTypes.TEXT
   },
   imageUrl: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: DataTypes.STRING(255),
+    field: 'image_url'
+  },
+  isCurrent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_current'
   },
   current: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
+    type: DataTypes.VIRTUAL,
+    get() {
+      return this.getDataValue('isCurrent');
+    },
+    set(value) {
+      this.setDataValue('isCurrent', value);
+    }
+  }
 }, {
-  timestamps: true,
+  tableName: 'clergy',
+  timestamps: false
 });
 
 module.exports = ClergyMember;

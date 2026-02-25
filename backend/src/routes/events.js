@@ -5,12 +5,33 @@ const { Event, Inscription, EventPhoto } = require('../models');
 
 const router = express.Router();
 
+const normalizeEventPayload = (payload = {}) => {
+  const normalized = { ...payload };
+  
+  // Handle published/isPublished conversion
+  if (Object.prototype.hasOwnProperty.call(normalized, 'published')) {
+    normalized.isPublished = normalized.published;
+    delete normalized.published;
+  }
+  
+  // Convert schedule time fields (timeStart/timeEnd) to event time format
+  if (normalized.timeStart || normalized.timeEnd) {
+    const start = normalized.timeStart || '00:00';
+    const end = normalized.timeEnd || '23:59';
+    normalized.time = `${start} às ${end}`;
+    delete normalized.timeStart;
+    delete normalized.timeEnd;
+  }
+  
+  return normalized;
+};
+
 // GET events with inscription count
 router.get('/public/with-counts', async (req, res) => {
   try {
     const events = await Event.findAll({
       where: { isInscriptionEvent: false },
-      order: [['createdAt', 'DESC']],
+      order: [['date', 'DESC']],
     });
 
     const eventsWithCounts = await Promise.all(
@@ -40,7 +61,7 @@ router.get('/', async (req, res) => {
 
     const events = await Event.findAll({
       where,
-      order: [['createdAt', 'DESC']],
+      order: [['date', 'DESC']],
     });
     res.json(events);
   } catch (error) {
@@ -64,16 +85,27 @@ router.get('/:id', async (req, res) => {
 // CREATE event (padrão: published=false, isActive=true)
 router.post('/', async (req, res) => {
   try {
-    const { title, date, dateEnd, time, location, description, category, acceptsRegistration, maxParticipants, isInscriptionEvent, isProgram, published } = req.body;
+    const {
+      title,
+      date,
+      dateEnd,
+      time,
+      location,
+      description,
+      isProgram,
+      isInscriptionEvent,
+      maxParticipants,
+      acceptsRegistration,
+      category,
+      published,
+    } = req.body;
 
     if (!title || !date || !location) {
       return res.status(400).json({ message: 'Título, data e local são obrigatórios' });
     }
 
-    // Validate time format HH:MM às HH:MM
-    const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
-    if (!time || !timeRegex.test(time)) {
-      return res.status(400).json({ message: 'Horário deve estar no formato HH:MM às HH:MM' });
+    if (!time || !String(time).trim()) {
+      return res.status(400).json({ message: 'Horário é obrigatório' });
     }
 
     const event = await Event.create({
@@ -83,13 +115,13 @@ router.post('/', async (req, res) => {
       time,
       location,
       description,
-      category,
-      acceptsRegistration,
-      maxParticipants,
-      published: published !== undefined ? published : false,
+      category: category || 'Evento',
+      isPublished: published !== undefined ? published : false,
       isActive: true,
       isProgram: isProgram !== undefined ? isProgram : true,
       isInscriptionEvent: isInscriptionEvent !== undefined ? isInscriptionEvent : false,
+      maxParticipants: maxParticipants || null,
+      acceptsRegistration: acceptsRegistration !== undefined ? acceptsRegistration : true,
     });
 
     res.status(201).json({
@@ -109,15 +141,9 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
 
-    // Validate time format if provided
-    if (req.body.time) {
-      const timeRegex = /^\d{2}:\d{2}\s+às\s+\d{2}:\d{2}$/;
-      if (!timeRegex.test(req.body.time)) {
-        return res.status(400).json({ message: 'Horário deve estar no formato HH:MM às HH:MM' });
-      }
-    }
+    const payload = normalizeEventPayload(req.body);
 
-    await event.update(req.body);
+    await event.update(payload);
     res.json({
       message: 'Evento atualizado com sucesso',
       event,
@@ -135,7 +161,7 @@ router.patch('/:id/publish', async (req, res) => {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
 
-    await event.update({ published: true });
+    await event.update({ isPublished: true });
     res.json({
       message: 'Evento publicado com sucesso',
       event,
@@ -153,7 +179,7 @@ router.patch('/:id/unpublish', async (req, res) => {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
 
-    await event.update({ published: false });
+    await event.update({ isPublished: false });
     res.json({
       message: 'Evento despublicado com sucesso',
       event,
@@ -181,24 +207,6 @@ router.patch('/:id/archive', async (req, res) => {
   }
 });
 
-// MOVE event to EVENT (from PROGRAM)
-router.patch('/:id/move-to-event', async (req, res) => {
-  try {
-    const event = await Event.findByPk(req.params.id);
-    if (!event) {
-      return res.status(404).json({ message: 'Evento não encontrado' });
-    }
-
-    await event.update({ isProgram: false, published: false });
-    res.json({
-      message: 'Evento movido para aba de Eventos',
-      event,
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Erro ao mover evento', error: error.message });
-  }
-});
-
 // MOVE event to PROGRAM (from EVENT)
 router.patch('/:id/move-to-program', async (req, res) => {
   try {
@@ -207,10 +215,46 @@ router.patch('/:id/move-to-program', async (req, res) => {
       return res.status(404).json({ message: 'Evento não encontrado' });
     }
 
-    await event.update({ isProgram: true });
+    let timeStart = event.time;
+    let timeEnd = null;
+    if (event.time && event.time.includes(' às ')) {
+      const parts = event.time.split(' às ');
+      timeStart = parts[0];
+      timeEnd = parts[1];
+    }
+
+    const { Schedule, EventPhoto, Inscription } = require('../models');
+
+    const newSchedule = await Schedule.create({
+      title: event.title,
+      date: event.date,
+      timeStart: timeStart || '',
+      timeEnd: timeEnd,
+      location: event.location,
+      description: event.description,
+      category: 'Evento',
+      isPublished: false
+    });
+
+    // Delete associated photos and inscriptions
+    const path = require('path');
+    const fs = require('fs');
+
+    const photos = await EventPhoto.findAll({ where: { eventId: req.params.id } });
+    for (const photo of photos) {
+      const filepath = path.join(__dirname, '../../../Styles/img/eventos', photo.filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+      await photo.destroy();
+    }
+
+    await Inscription.destroy({ where: { eventId: req.params.id } });
+    await event.destroy();
+
     res.json({
       message: 'Evento movido para aba de Programações',
-      event,
+      schedule: newSchedule,
     });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao mover evento', error: error.message });

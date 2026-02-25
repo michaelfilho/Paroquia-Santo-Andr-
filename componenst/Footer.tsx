@@ -1,10 +1,43 @@
 import { Church, Mail, Phone, MapPin, Instagram, Facebook, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { contentAPI } from '../src/services/api';
 
 interface FooterProps {
   onAdminClick?: () => void;
 }
 
 export function Footer({ onAdminClick }: FooterProps) {
+  const [config, setConfig] = useState({
+    parishName: 'Paróquia Santo André',
+    cityState: 'Tarumã - SP',
+    aboutText: 'Uma comunidade de fé, esperança e amor servindo Tarumã desde 1952.',
+    phone: '(18) 99799-4927',
+    phoneLink: '18997994927',
+    email: 'parsant@hotmail.com',
+    addressLines: ['Rua das Violetas, 257', 'Centro - Tarumã/SP', 'CEP: 19820035'],
+    instagramUrl: 'https://www.instagram.com/paroquiasantoandre.taruma/',
+    facebookUrl: 'https://www.facebook.com/paroquia.santoandre.37',
+    copyrightText: '© 2026 Paróquia Santo André. Todos os direitos reservados.',
+    privacyLabel: 'Política de Privacidade',
+    termsLabel: 'Termos de Uso',
+  });
+
+  useEffect(() => {
+    const loadFooterConfig = async () => {
+      try {
+        const data = await contentAPI.getByKey('footer_config');
+        if (data?.content) {
+          const parsed = JSON.parse(data.content);
+          setConfig((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configuração do rodapé:', error);
+      }
+    };
+
+    loadFooterConfig();
+  }, []);
+
   return (
     <footer className="bg-gradient-to-br from-amber-950 via-amber-900 to-amber-950 text-white relative overflow-hidden">
       {/* Decorative Elements */}
@@ -20,12 +53,12 @@ export function Footer({ onAdminClick }: FooterProps) {
                 <Church className="w-7 h-7" />
               </div>
               <div>
-                <h3 className="font-bold text-xl">Paróquia Santo André</h3>
-                <p className="text-amber-300 text-sm font-medium">Tarumã - SP</p>
+                <h3 className="font-bold text-xl">{config.parishName}</h3>
+                <p className="text-amber-300 text-sm font-medium">{config.cityState}</p>
               </div>
             </div>
             <p className="text-amber-100 leading-relaxed">
-              Uma comunidade de fé, esperança e amor servindo Tarumã desde 1952.
+              {config.aboutText}
             </p>
           </div>
 
@@ -36,25 +69,25 @@ export function Footer({ onAdminClick }: FooterProps) {
               <div className="flex items-start space-x-3 group">
                 <Phone className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <a href="tel:18997994927" className="hover:text-amber-200 transition-colors">
-                    (18) 99799-4927
+                  <a href={`tel:${config.phoneLink}`} className="hover:text-amber-200 transition-colors">
+                    {config.phone}
                   </a>
                 </div>
               </div>
               <div className="flex items-start space-x-3 group">
                 <Mail className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  <a href="mailto:parsant@hotmail.com" className="hover:text-amber-200 transition-colors break-all">
-                    parsant@hotmail.com
+                  <a href={`mailto:${config.email}`} className="hover:text-amber-200 transition-colors break-all">
+                    {config.email}
                   </a>
                 </div>
               </div>
               <div className="flex items-start space-x-3 group">
                 <MapPin className="w-5 h-5 text-amber-300 flex-shrink-0 mt-1 group-hover:scale-110 transition-transform" />
                 <div>
-                  Rua das Violetas, 257<br />
-                  Centro - Tarumã/SP<br />
-                  CEP: 19820035
+                  {config.addressLines.map((line) => (
+                    <div key={line}>{line}</div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -68,7 +101,7 @@ export function Footer({ onAdminClick }: FooterProps) {
             </p>
             <div className="flex space-x-4">
               <a
-                href="https://www.instagram.com/paroquiasantoandre.taruma/"
+                href={config.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-lg"
@@ -77,7 +110,7 @@ export function Footer({ onAdminClick }: FooterProps) {
                 <Instagram className="w-6 h-6" />
               </a>
               <a
-                href="https://www.facebook.com/paroquia.santoandre.37"
+                href={config.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-lg"
@@ -93,15 +126,15 @@ export function Footer({ onAdminClick }: FooterProps) {
         <div className="border-t border-amber-700/50 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-amber-200 text-center md:text-left">
-              © 2026 Paróquia Santo André. Todos os direitos reservados.
+              {config.copyrightText}
             </p>
             <div className="flex items-center space-x-6 text-amber-200">
               <button className="hover:text-white transition-colors">
-                Política de Privacidade
+                {config.privacyLabel}
               </button>
               <span className="text-amber-700">•</span>
               <button className="hover:text-white transition-colors">
-                Termos de Uso
+                {config.termsLabel}
               </button>
               {onAdminClick && (
                 <>

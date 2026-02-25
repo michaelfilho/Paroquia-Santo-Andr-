@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const chapels = await Chapel.findAll({
-      order: [['createdAt', 'DESC']],
+      order: [['name', 'ASC']],
     });
     res.json(chapels);
   } catch (error) {
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
 // CREATE chapel
 router.post('/', async (req, res) => {
   try {
-    const { name, neighborhood, coordinator, address, phone } = req.body;
+    const { name, neighborhood, coordinator, address, phone, email, description, photoUrl, imageUrl } = req.body;
 
     if (!name || !neighborhood) {
       return res.status(400).json({ message: 'Nome e bairro são obrigatórios' });
@@ -43,6 +43,9 @@ router.post('/', async (req, res) => {
       coordinator,
       address,
       phone,
+      email,
+      description,
+      imageUrl: photoUrl || imageUrl || null,
     });
 
     res.status(201).json({
@@ -62,7 +65,30 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Capela não encontrada' });
     }
 
-    await chapel.update(req.body);
+    const {
+      name,
+      neighborhood,
+      coordinator,
+      address,
+      phone,
+      email,
+      description,
+      photoUrl,
+      imageUrl,
+      number,
+    } = req.body;
+
+    await chapel.update({
+      name,
+      neighborhood,
+      coordinator,
+      address,
+      phone,
+      email,
+      description,
+      number,
+      imageUrl: photoUrl || imageUrl || chapel.imageUrl || null,
+    });
     res.json({
       message: 'Capela atualizada com sucesso',
       chapel,

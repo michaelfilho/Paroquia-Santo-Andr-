@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Info, ChevronDown } from 'lucide-react';
-import { publicEventsAPI } from '../src/services/api';
+import { publicEventsAPI, schedulesAPI } from '../src/services/api';
 
 interface FutureEvent {
   id: string | number;
@@ -28,19 +28,29 @@ export function FutureEvents() {
 
   const loadFutureEvents = async () => {
     try {
-      const data = await publicEventsAPI.getAll();
+      const [eventsData, schedulesData] = await Promise.all([
+        publicEventsAPI.getAll().catch(() => []),
+        schedulesAPI.getPublic().catch(() => [])
+      ]);
       
-      if (data && data.length > 0) {
+      // Combinar eventos-programa e schedules
+      const programEvents = (eventsData || []).filter((event: any) => {
+        const isProgram = toBoolean(event.isProgram);
+        const isPublished = toBoolean(event.published);
+        return isProgram && isPublished;
+      });
+
+      const allPrograms = [...programEvents, ...(schedulesData || [])];
+      
+      if (allPrograms.length > 0) {
         // Filtrar apenas eventos futuros
         const now = new Date();
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
-        const futureEvents = data
+        const futureEvents = allPrograms
           .filter((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
-            const isProgram = toBoolean(event.isProgram);
-            const isPublished = toBoolean(event.published);
-            return isProgram && isPublished;
+            return true; // Já filtrados como publicados
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);

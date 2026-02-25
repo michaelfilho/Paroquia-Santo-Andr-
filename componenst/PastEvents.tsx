@@ -34,7 +34,7 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
   const loadPastEvents = async () => {
     try {
       const data = await publicEventsAPI.getAll();
-      
+
       if (data && data.length > 0) {
         // Filtrar apenas eventos passados
         const now = new Date();
@@ -48,12 +48,12 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
           })
           .map((event: any) => {
             const eventDate = new Date(`${event.date}T00:00:00`);
-            const formattedDate = eventDate.toLocaleDateString('pt-BR', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
+            const formattedDate = eventDate.toLocaleDateString('pt-BR', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
             });
-            
+
             return {
               ...event,
               date: formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1),
@@ -62,7 +62,7 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
             };
           })
           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        
+
         setEvents(pastEvents);
       } else {
         setEvents(getDefaultEvents());
@@ -125,9 +125,8 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
                   {year}
                 </h3>
                 <ChevronDown
-                  className={`w-6 h-6 text-amber-700 transition-transform duration-300 ${
-                    openYear === year ? 'rotate-180' : ''
-                  }`}
+                  className={`w-6 h-6 text-amber-700 transition-transform duration-300 ${openYear === year ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -161,13 +160,15 @@ export function PastEvents({ onViewPhotos }: PastEventsProps) {
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => onViewPhotos(event.id)}
-                          className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition"
-                        >
-                          <ImageIcon className="w-5 h-5" />
-                          Ver Fotos
-                        </button>
+                        {event.hasPhotos && (
+                          <button
+                            onClick={() => onViewPhotos(event.id)}
+                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition"
+                          >
+                            <ImageIcon className="w-5 h-5" />
+                            Ver Galeria
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

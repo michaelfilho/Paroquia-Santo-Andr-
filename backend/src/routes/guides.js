@@ -7,9 +7,16 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const guides = await Guide.findAll({
-      order: [['createdAt', 'DESC']],
+      order: [['title', 'ASC']],
     });
-    res.json(guides);
+    const normalized = guides.map((guide) => {
+      const json = guide.toJSON();
+      return {
+        ...json,
+        content: json.description || '',
+      };
+    });
+    res.json(normalized);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar guias', error: error.message });
   }
@@ -39,7 +46,7 @@ router.post('/', async (req, res) => {
 
     const guide = await Guide.create({
       title,
-      content,
+      description: content,
       details: details || [],
       icon,
     });
@@ -61,7 +68,12 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Guia não encontrado' });
     }
 
-    await guide.update(req.body);
+    const payload = {
+      ...req.body,
+      description: req.body.content ?? req.body.description,
+    };
+
+    await guide.update(payload);
     res.json({
       message: 'Guia atualizado com sucesso',
       guide,

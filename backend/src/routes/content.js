@@ -33,16 +33,36 @@ router.get('/:key', async (req, res) => {
 // CREATE content text
 router.post('/', async (req, res) => {
   try {
-    const { key, title, content } = req.body;
+    const { key, title, content, imageUrl } = req.body;
+    const normalizedKey = typeof key === 'string' ? key.trim() : '';
+    const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+    const normalizedContent = typeof content === 'string' ? content.trim() : '';
+    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl.trim() : '';
 
-    if (!key || !title || !content) {
+    if (!normalizedKey || !normalizedTitle || !normalizedContent) {
       return res.status(400).json({ message: 'Chave, título e conteúdo são obrigatórios' });
     }
 
+    const existing = await ContentText.findOne({ where: { key: normalizedKey } });
+
+    if (existing) {
+      await existing.update({
+        title: normalizedTitle,
+        content: normalizedContent,
+        imageUrl: normalizedImageUrl || null,
+      });
+
+      return res.json({
+        message: 'Texto atualizado com sucesso',
+        text: existing,
+      });
+    }
+
     const text = await ContentText.create({
-      key,
-      title,
-      content,
+      key: normalizedKey,
+      title: normalizedTitle,
+      content: normalizedContent,
+      imageUrl: normalizedImageUrl || null,
     });
 
     res.status(201).json({
@@ -61,8 +81,11 @@ router.put('/:id', async (req, res) => {
     if (!text) {
       return res.status(404).json({ message: 'Texto não encontrado' });
     }
-
-    await text.update(req.body);
+    const payload = { ...req.body };
+    if (typeof payload.title === 'string') payload.title = payload.title.trim();
+    if (typeof payload.content === 'string') payload.content = payload.content.trim();
+    if (typeof payload.imageUrl === 'string') payload.imageUrl = payload.imageUrl.trim() || null;
+    await text.update(payload);
     res.json({
       message: 'Texto atualizado com sucesso',
       text,

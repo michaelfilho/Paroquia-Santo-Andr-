@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 
 module.exports = {
   async up(queryInterface) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('Igreja1010', 10);
 
     await queryInterface.bulkInsert('Admins', [
       {

@@ -3,65 +3,78 @@ const sequelize = require('../config/sequelize');
 
 const Event = sequelize.define('Event', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.CHAR(36),
     primaryKey: true,
+    defaultValue: DataTypes.UUIDV4
   },
   title: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(255),
+    allowNull: false
   },
   date: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  dateEnd: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: DataTypes.DATEONLY,
+    allowNull: false
   },
   time: {
-    type: DataTypes.STRING,
-    allowNull: true,
+    type: DataTypes.STRING(50)
   },
   location: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: DataTypes.STRING(255)
   },
   description: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT
+  },
+  dateEnd: {
+    type: DataTypes.DATEONLY,
     allowNull: true,
+    field: 'date_end'
   },
   category: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  acceptsRegistration: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
-  },
-  published: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
-  isActive: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
+    type: DataTypes.STRING(100),
+    allowNull: true
   },
   isProgram: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+    field: 'is_program'
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   },
   isInscriptionEvent: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+    field: 'is_inscription_event'
   },
   maxParticipants: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    defaultValue: null,
+    field: 'max_participants'
   },
+  acceptsRegistration: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'accepts_registration'
+  },
+  isPublished: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_published'
+  },
+  published: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return this.getDataValue('isPublished');
+    },
+    set(value) {
+      this.setDataValue('isPublished', value);
+    }
+  }
 }, {
-  timestamps: true,
+  tableName: 'events',
+  timestamps: true
 });
 
 module.exports = Event;
