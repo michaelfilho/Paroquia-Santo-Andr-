@@ -10,7 +10,7 @@ export function About({ litCandlesCount = 0 }: AboutProps) {
   const [historyText, setHistoryText] = useState('');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    chapelsCount: '5',
+    chapelsCount: '5+',
     pastoralGroups: '10+',
     yearsHistory: '72',
   });
@@ -31,7 +31,7 @@ export function About({ litCandlesCount = 0 }: AboutProps) {
           try {
             const parsed = JSON.parse(statsData.content);
             setStats({
-              chapelsCount: String(parsed.chapelsCount ?? '5'),
+              chapelsCount: String(parsed.chapelsCount ?? '5+'),
               pastoralGroups: String(parsed.pastoralGroups ?? '10+'),
               yearsHistory: String(parsed.yearsHistory ?? '72'),
             });
@@ -58,18 +58,7 @@ export function About({ litCandlesCount = 0 }: AboutProps) {
       </div>;
     }
 
-    if (!historyText) {
-      return (
-        <>
-          <p className="text-gray-600 leading-relaxed text-lg text-justify">
-            A Paróquia Santo André foi fundada em 1952, tornando-se um pilar fundamental da comunidade católica em Tarumã. Nossa história começa com um pequeno grupo de fiéis que se reuniam para celebrar a fé e construir uma comunidade baseada nos valores cristãos.
-          </p>
-          <p className="text-gray-600 leading-relaxed text-lg text-justify mt-4">
-            Ao longo de mais de 70 anos, crescemos e evoluímos, sempre mantendo nosso compromisso com o serviço, a evangelização e o amor ao próximo. Nossa igreja matriz, construída em 1958, foi restaurada em 2010.
-          </p>
-        </>
-      );
-    }
+    if (!historyText.trim()) return null;
 
     return historyText.split('\n').filter(p => p.trim() !== '').map((paragraph, index) => (
       <p key={index} className="text-gray-600 leading-relaxed text-lg text-justify mt-4">
@@ -118,7 +107,7 @@ export function About({ litCandlesCount = 0 }: AboutProps) {
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <Church className="w-14 h-14 text-amber-700 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">{stats.chapelsCount}</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">5+</h4>
               <p className="text-gray-600 font-medium">Capelas na Região</p>
             </div>
 

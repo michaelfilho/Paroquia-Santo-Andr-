@@ -16,7 +16,7 @@ export function Footer({ onAdminClick }: FooterProps) {
     email: 'parsant@hotmail.com',
     addressLines: ['Rua das Violetas, 257', 'Centro - Tarumã/SP', 'CEP: 19820035'],
     instagramUrl: 'https://www.instagram.com/paroquiasantoandre.taruma/',
-    facebookUrl: 'https://www.facebook.com/paroquia.santoandre.37',
+    facebookUrl: 'https://www.facebook.com/paroquiasantoandretaruma',
     copyrightText: '© 2026 Paróquia Santo André. Todos os direitos reservados.',
     privacyLabel: 'Política de Privacidade',
     termsLabel: 'Termos de Uso',
@@ -110,7 +110,7 @@ export function Footer({ onAdminClick }: FooterProps) {
                 <Instagram className="w-6 h-6" />
               </a>
               <a
-                href={config.facebookUrl}
+                href="https://www.facebook.com/paroquiasantoandretaruma"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-lg"

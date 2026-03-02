@@ -40,10 +40,12 @@ import {
   carouselAPI,
   schedulesAPI,
   registrationLinksAPI,
+  siteVisitsAPI,
   getAdminProfile,
   setAdminProfile
 } from '../src/services/api';
 import { ImageUpload } from './ImageUpload';
+import churchBg from '../Styles/img/igreja.jpeg';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -95,7 +97,7 @@ const ActionIconButton = ({
   );
 };
 
-type TabType = 'eventos' | 'programacoes' | 'inscricoes-links' | 'paroquia' | 'guias' | 'administradores' | 'movimentos' | 'padres' | 'noticias' | 'inicio' | 'brasao';
+type TabType = 'eventos' | 'programacoes' | 'inscricoes-links' | 'paroquia' | 'escritos-textos' | 'guias' | 'administradores' | 'movimentos' | 'padres' | 'noticias' | 'inicio' | 'acessos' | 'brasao';
 
 interface Event {
   id: string;
@@ -121,6 +123,13 @@ interface Registration {
   email: string;
   phone: string;
   status: string;
+}
+
+interface TimelineEntry {
+  year: string;
+  title: string;
+  description: string;
+  icon?: string;
 }
 
 interface Chapel {
@@ -208,9 +217,44 @@ interface CarouselItem {
   subtitleColor?: string;
   linkColor?: string;
   imageUrl: string;
+  mobileImageUrl?: string;
   order: number;
   isActive: boolean;
 }
+
+const HERO_PRIMARY_SLIDE_KEY = 'hero_primary_slide';
+const MAP_MAIN_CARD_KEY = 'map_main_card';
+
+const defaultPrimaryHeroSlide = {
+  imageUrl: '',
+  mobileImageUrl: '',
+  title: 'Bem-vindo à',
+  titleHighlight: 'Paróquia Santo André',
+  subtitle: 'Uma comunidade de fé, esperança e amor em Tarumã',
+  link: '#sobre',
+  buttonText: 'Conheça Nossa História',
+  titleColor: '#FFFFFF',
+  titleColorEnd: '#F59E0B',
+  subtitleColor: '#F3F4F6',
+  linkColor: '#FFFFFF',
+};
+
+const defaultMapMainCard = {
+  imageUrl: '',
+  title: 'Paróquia Santo André',
+  badge: 'Centro',
+  address: 'R. das Violetas, 257, Tarumã - SP',
+  googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000',
+  routeLabel: 'Ver rota no Google Maps',
+};
+
+const timelineIconOptions = [
+  { value: 'church', label: 'Igreja' },
+  { value: 'cross', label: 'Cruz' },
+  { value: 'calendar-heart', label: 'Coração' },
+  { value: 'clock', label: 'Relógio' },
+  { value: 'plus', label: 'Mais' },
+];
 
 interface RegistrationLinkItem {
   id: string;
@@ -498,6 +542,7 @@ const InscriptionsModal = ({ event, inscriptions, isOpen, onClose, onDelete }: I
 interface ChapelFormModalProps {
   editingId: string | null;
   chapelForm: Chapel;
+  entityLabel?: string;
   onClose: () => void;
   onSave: () => void;
   onNameChange: (value: string) => void;
@@ -514,6 +559,7 @@ interface ChapelFormModalProps {
 const ChapelFormModal = ({
   editingId,
   chapelForm,
+  entityLabel = 'Capela',
   onClose,
   onSave,
   onNameChange,
@@ -529,7 +575,7 @@ const ChapelFormModal = ({
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[88vh] overflow-y-auto p-5 sm:p-8">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Nova'} Capela</h3>
+        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Nova'} {entityLabel}</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           <X className="w-6 h-6" />
         </button>
@@ -626,7 +672,7 @@ const ChapelFormModal = ({
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all"
         >
           <Save className="w-5 h-5" />
-          <span>Salvar Capela</span>
+          <span>Salvar {entityLabel}</span>
         </button>
       </div>
     </div>
@@ -1218,9 +1264,11 @@ const ContentFormModal = ({
 interface CarouselFormModalProps {
   editingId: string | null;
   carouselForm: CarouselItem;
+  isPrimarySlide?: boolean;
   onClose: () => void;
   onSave: () => void;
   onImageUrlChange: (value: string) => void;
+  onMobileImageUrlChange: (value: string) => void;
   onTitleChange: (value: string) => void;
   onTitleHighlightChange: (value: string) => void;
   onSubtitleChange: (value: string) => void;
@@ -1237,9 +1285,11 @@ interface CarouselFormModalProps {
 const CarouselFormModal = ({
   editingId,
   carouselForm,
+  isPrimarySlide = false,
   onClose,
   onSave,
   onImageUrlChange,
+  onMobileImageUrlChange,
   onTitleChange,
   onTitleHighlightChange,
   onSubtitleChange,
@@ -1255,14 +1305,22 @@ const CarouselFormModal = ({
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-amber-900">{editingId ? 'Editar' : 'Novo'} Item do Carrossel</h3>
+        <h3 className="text-2xl font-bold text-amber-900">{isPrimarySlide ? 'Editar Slide Principal' : `${editingId ? 'Editar' : 'Novo'} Item do Carrossel`}</h3>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
           <X className="w-6 h-6" />
         </button>
       </div>
       <div className="space-y-4">
+        {isPrimarySlide && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-medium text-amber-900">Slide principal da home</p>
+            <p className="text-sm text-amber-800 mt-1">Este slide sempre fica em 1º lugar. Você pode trocar a imagem; se deixar vazio, usa a igreja.jpeg.</p>
+          </div>
+        )}
         <div>
-          <label className="text-sm font-medium text-amber-900 block mb-1">Imagem do Carrossel (Obrigatória)</label>
+          <label className="text-sm font-medium text-amber-900 block mb-1">
+            {isPrimarySlide ? 'Imagem para Notebook e Desktop ' : 'Imagem para Notebook e Desktop'}
+          </label>
           <input
             type="text"
             placeholder="URL da foto (ou faça upload)"
@@ -1271,6 +1329,17 @@ const CarouselFormModal = ({
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none mb-2"
           />
           <ImageUpload onImageUrlChange={onImageUrlChange} currentImageUrl={carouselForm.imageUrl} />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-amber-900 block mb-1">Imagem para Celular</label>
+          <input
+            type="text"
+            placeholder="URL da imagem mobile (se vazio, usa imagem principal)"
+            value={carouselForm.mobileImageUrl || ''}
+            onChange={(e) => onMobileImageUrlChange(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none mb-2"
+          />
+          <ImageUpload onImageUrlChange={onMobileImageUrlChange} currentImageUrl={carouselForm.mobileImageUrl || ''} />
         </div>
         <input
           type="text"
@@ -1345,27 +1414,31 @@ const CarouselFormModal = ({
             />
           </label>
         </div>
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-amber-900">Ordem de Exibição (Ex: 1, 2, 3)</label>
-          <input
-            type="number"
-            value={carouselForm.order !== undefined ? carouselForm.order : 0}
-            onChange={(e) => onOrderIndexChange(Number(e.target.value))}
-            className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none text-right"
-          />
-        </div>
-        <label className="flex items-center space-x-2 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all">
-          <input
-            type="checkbox"
-            checked={carouselForm.isActive}
-            onChange={(e) => onIsActiveChange(e.target.checked)}
-            className="rounded border-gray-300 text-amber-600 focus:ring-amber-600 w-5 h-5"
-          />
-          <div>
-            <span className="font-semibold text-gray-700 block">Exibir no site</span>
-            <span className="text-sm text-gray-500">Aparecerá na página inicial da paróquia.</span>
-          </div>
-        </label>
+        {!isPrimarySlide && (
+          <>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-amber-900">Ordem de Exibição (Ex: 1, 2, 3)</label>
+              <input
+                type="number"
+                value={carouselForm.order !== undefined ? carouselForm.order : 0}
+                onChange={(e) => onOrderIndexChange(Number(e.target.value))}
+                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none text-right"
+              />
+            </div>
+            <label className="flex items-center space-x-2 bg-gray-50 p-4 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all">
+              <input
+                type="checkbox"
+                checked={carouselForm.isActive}
+                onChange={(e) => onIsActiveChange(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-600 w-5 h-5"
+              />
+              <div>
+                <span className="font-semibold text-gray-700 block">Exibir no site</span>
+                <span className="text-sm text-gray-500">Aparecerá na página inicial da paróquia.</span>
+              </div>
+            </label>
+          </>
+        )}
         <button
           onClick={onSave}
           className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all mt-4"
@@ -1418,13 +1491,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [registrationLinks, setRegistrationLinks] = useState<RegistrationLinkItem[]>([]);
+  const [siteVisitsCount, setSiteVisitsCount] = useState(0);
 
   // Form state
   const [eventForm, setEventForm] = useState<Event>({
     id: '',
     title: '',
     date: '',
-    time: '00:00 às 00:00',
+    time: '',
     location: '',
     description: '',
     category: 'Evento',
@@ -1438,8 +1512,19 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [brasaoForm, setBrasaoForm] = useState<ContentText>({ id: '', key: 'brasao', title: '', content: '', imageUrl: '' });
   const [formerPriestForm, setFormerPriestForm] = useState<FormerPriest>({ id: '', name: '', period: '', subtext: '', description: '', imageUrl: '' });
   const [newsForm, setNewsForm] = useState<NewsItem>({ id: '', title: '', summary: '', content: '', imageUrl: '', publishedAt: new Date().toISOString() });
-  const [carouselForm, setCarouselForm] = useState<CarouselItem>({ id: '', imageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', order: 0, isActive: true });
+  const [carouselForm, setCarouselForm] = useState<CarouselItem>({ id: '', imageUrl: '', mobileImageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', subtitleColor: '#F3F4F6', linkColor: '#FFFFFF', order: 0, isActive: true });
   const [showCarouselForm, setShowCarouselForm] = useState(false);
+  const [isPrimaryCarouselEdit, setIsPrimaryCarouselEdit] = useState(false);
+  const [primarySlideContentId, setPrimarySlideContentId] = useState<string | null>(null);
+  const [mapMainCardContentId, setMapMainCardContentId] = useState<string | null>(null);
+  const [mapMainCardForm, setMapMainCardForm] = useState(defaultMapMainCard);
+  const [isEditingMatrizAsChapel, setIsEditingMatrizAsChapel] = useState(false);
+  const [aboutContentId, setAboutContentId] = useState<string | null>(null);
+  const [fullHistoryContentId, setFullHistoryContentId] = useState<string | null>(null);
+  const [timelineContentId, setTimelineContentId] = useState<string | null>(null);
+  const [aboutTextForm, setAboutTextForm] = useState('');
+  const [fullHistoryTextForm, setFullHistoryTextForm] = useState('');
+  const [timelineForm, setTimelineForm] = useState<TimelineEntry[]>([]);
   const [clergyPeriodMode, setClergyPeriodMode] = useState<'atual' | 'numeros'>('atual');
   const [clergyPeriodStart, setClergyPeriodStart] = useState('');
   const [clergyPeriodEnd, setClergyPeriodEnd] = useState('');
@@ -1536,6 +1621,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   // Carousel form handlers
   const handleCarouselImageUrlChange = (value: string) => setCarouselForm(prev => ({ ...prev, imageUrl: value }));
+  const handleCarouselMobileImageUrlChange = (value: string) => setCarouselForm(prev => ({ ...prev, mobileImageUrl: value }));
   const handleCarouselTitleChange = (value: string) => setCarouselForm(prev => ({ ...prev, title: value }));
   const handleCarouselTitleHighlightChange = (value: string) => setCarouselForm(prev => ({ ...prev, titleHighlight: value }));
   const handleCarouselSubtitleChange = (value: string) => setCarouselForm(prev => ({ ...prev, subtitle: value }));
@@ -1559,7 +1645,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(event);
     });
-    return Object.keys(grouped).sort().reverse().reduce((acc, key) => {
+    return Object.keys(grouped).sort().reduce((acc, key) => {
       acc[key] = grouped[key].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       return acc;
     }, {} as { [key: string]: Event[] });
@@ -1628,9 +1714,78 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       setCarouselItems(carouselData || []);
       setRegistrationLinks(registrationLinksData || []);
 
-      const brasaoContent = (contentData || []).find((c: any) => c.key === 'brasao');
+      try {
+        const visits = await siteVisitsAPI.getCount();
+        setSiteVisitsCount(Number(visits?.count || 0));
+      } catch {
+        setSiteVisitsCount(0);
+      }
+
+      const getLatestContentByKey = (key: string) => {
+        const matches = (contentData || []).filter((c: any) => c.key === key);
+        if (!matches.length) return null;
+        return matches.sort((a: any, b: any) => {
+          const aTime = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+          const bTime = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+          return bTime - aTime;
+        })[0];
+      };
+
+      const brasaoContent = getLatestContentByKey('brasao');
       if (brasaoContent) {
         setBrasaoForm(brasaoContent as ContentText);
+      }
+
+      const primaryHeroContent = getLatestContentByKey(HERO_PRIMARY_SLIDE_KEY);
+      setPrimarySlideContentId(primaryHeroContent?.id || null);
+
+      const aboutContent = getLatestContentByKey('about');
+      setAboutContentId(aboutContent?.id || null);
+      setAboutTextForm(aboutContent?.content || '');
+
+      const fullHistoryContent = getLatestContentByKey('full_history');
+      setFullHistoryContentId(fullHistoryContent?.id || null);
+      setFullHistoryTextForm(fullHistoryContent?.content || '');
+
+      const timelineContent = getLatestContentByKey('full_history_timeline');
+      setTimelineContentId(timelineContent?.id || null);
+      if (timelineContent?.content) {
+        try {
+          const parsed = JSON.parse(timelineContent.content);
+          if (Array.isArray(parsed)) {
+            const sanitized = parsed
+              .filter((item) => item?.year && item?.title && item?.description)
+              .map((item) => ({
+                year: String(item.year),
+                title: String(item.title),
+                description: String(item.description),
+                icon: String(item.icon || 'church'),
+              }));
+
+            setTimelineForm(sanitized);
+          } else {
+            setTimelineForm([]);
+          }
+        } catch {
+          setTimelineForm([]);
+        }
+      } else {
+        setTimelineForm([]);
+      }
+
+      const mapMainCardContent = getLatestContentByKey(MAP_MAIN_CARD_KEY);
+      setMapMainCardContentId(mapMainCardContent?.id || null);
+      if (mapMainCardContent?.content) {
+        try {
+          setMapMainCardForm({
+            ...defaultMapMainCard,
+            ...JSON.parse(mapMainCardContent.content),
+          });
+        } catch {
+          setMapMainCardForm(defaultMapMainCard);
+        }
+      } else {
+        setMapMainCardForm(defaultMapMainCard);
       }
 
       if (inscriptionsData && Array.isArray(inscriptionsData)) {
@@ -2102,6 +2257,39 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleSaveChapel = async () => {
     try {
       setLoading(true);
+
+      if (isEditingMatrizAsChapel) {
+        const address = [chapelForm.address, chapelForm.number].filter(Boolean).join(', ');
+        const payload = {
+          ...defaultMapMainCard,
+          ...mapMainCardForm,
+          imageUrl: chapelForm.photoUrl || mapMainCardForm.imageUrl || '',
+          title: chapelForm.name || defaultMapMainCard.title,
+          badge: chapelForm.neighborhood || defaultMapMainCard.badge,
+          address: address || mapMainCardForm.address || defaultMapMainCard.address,
+        };
+
+        const requestBody = {
+          key: MAP_MAIN_CARD_KEY,
+          title: 'Card principal do mapa',
+          content: JSON.stringify(payload),
+          imageUrl: '',
+        };
+
+        if (mapMainCardContentId) {
+          await contentAPI.update(mapMainCardContentId, requestBody);
+        } else {
+          await contentAPI.create(requestBody);
+        }
+
+        await loadAllData();
+        setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '', description: '', photoUrl: '' });
+        setShowChapelForm(false);
+        setIsEditingMatrizAsChapel(false);
+        setEditingId(null);
+        return;
+      }
+
       const { number, ...rest } = chapelForm;
       const address = [chapelForm.address, number].filter(Boolean).join(', ');
       const chapelPayload = { ...rest, address };
@@ -2113,6 +2301,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       await loadAllData();
       setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '', description: '', photoUrl: '' });
       setShowChapelForm(false);
+      setIsEditingMatrizAsChapel(false);
       setEditingId(null);
     } catch (error) {
       console.error('Erro ao salvar capela:', error);
@@ -2123,6 +2312,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   };
 
   const handleEditChapel = (chapel: Chapel) => {
+    setIsEditingMatrizAsChapel(false);
     const [streetPart, numberPart] = (chapel.address || '').split(',');
     setChapelForm({
       ...chapel,
@@ -2130,6 +2320,25 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       number: numberPart?.trim() || '',
     });
     setEditingId(chapel.id);
+    setShowChapelForm(true);
+  };
+
+  const handleEditMatrizAsChapel = () => {
+    const [streetPart, numberPart] = (mapMainCardForm.address || '').split(',');
+    setChapelForm({
+      id: 'matriz',
+      name: mapMainCardForm.title,
+      neighborhood: mapMainCardForm.badge,
+      address: streetPart?.trim() || '',
+      number: numberPart?.trim() || '',
+      coordinator: '',
+      phone: '',
+      email: '',
+      description: '',
+      photoUrl: mapMainCardForm.imageUrl || '',
+    } as Chapel);
+    setIsEditingMatrizAsChapel(true);
+    setEditingId('matriz');
     setShowChapelForm(true);
   };
 
@@ -2385,23 +2594,237 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
+  const handleSaveMapMainCard = async () => {
+    try {
+      setLoading(true);
+
+      const payload = {
+        ...defaultMapMainCard,
+        ...mapMainCardForm,
+      };
+
+      const requestBody = {
+        key: MAP_MAIN_CARD_KEY,
+        title: 'Card principal do mapa',
+        content: JSON.stringify(payload),
+        imageUrl: '',
+      };
+
+      if (mapMainCardContentId) {
+        await contentAPI.update(mapMainCardContentId, requestBody);
+      } else {
+        await contentAPI.create(requestBody);
+      }
+
+      await loadAllData();
+      alert('Card principal do mapa salvo com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar card principal do mapa:', error);
+      alert('Erro ao salvar card principal do mapa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveAboutText = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        key: 'about',
+        title: 'Sobre Nós',
+        content: aboutTextForm,
+        imageUrl: '',
+      };
+
+      if (aboutContentId) {
+        await contentAPI.update(aboutContentId, payload);
+      } else {
+        await contentAPI.create(payload);
+      }
+
+      await loadAllData();
+      alert('Texto de Sobre Nós salvo com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar Sobre Nós:', error);
+      alert('Erro ao salvar Sobre Nós');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveFullHistoryText = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        key: 'full_history',
+        title: 'História Completa',
+        content: fullHistoryTextForm,
+        imageUrl: '',
+      };
+
+      if (fullHistoryContentId) {
+        await contentAPI.update(fullHistoryContentId, payload);
+      } else {
+        await contentAPI.create(payload);
+      }
+
+      await loadAllData();
+      alert('Texto de História Completa salvo com sucesso');
+    } catch (error) {
+      console.error('Erro ao salvar História Completa:', error);
+      alert('Erro ao salvar História Completa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTimelineFieldChange = (index: number, field: keyof TimelineEntry, value: string) => {
+    setTimelineForm((prev) => prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item)));
+  };
+
+  const persistTimelineEntries = async (entries: TimelineEntry[], successMessage: string) => {
+    try {
+      setLoading(true);
+
+      const cleaned = entries
+        .map((item) => ({
+          year: item.year.trim(),
+          title: item.title.trim(),
+          description: item.description.trim(),
+          icon: (item.icon || 'church').trim(),
+        }))
+        .filter((item) => item.year && item.title && item.description);
+
+      const payload = {
+        key: 'full_history_timeline',
+        title: 'Linha do Tempo Paroquial',
+        content: JSON.stringify(cleaned),
+        imageUrl: '',
+      };
+
+      if (timelineContentId) {
+        await contentAPI.update(timelineContentId, payload);
+      } else {
+        await contentAPI.create(payload);
+      }
+
+      await loadAllData();
+      alert(successMessage);
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar linha do tempo:', error);
+      alert('Erro ao salvar linha do tempo');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTimelineEntry = () => {
+    setTimelineForm((prev) => ([
+      ...prev,
+      { year: '', title: '', description: '', icon: 'church' },
+    ]));
+  };
+
+  const handleRemoveTimelineEntry = async (index: number) => {
+    const updatedTimeline = timelineForm.filter((_, idx) => idx !== index);
+    setTimelineForm(updatedTimeline);
+    await persistTimelineEntries(updatedTimeline, 'Registro excluído com sucesso');
+  };
+
+  const handleSaveTimeline = async () => {
+    await persistTimelineEntries(timelineForm, 'Linha do tempo salva com sucesso');
+  };
+
+  const handleEditPrimaryHeroSlide = () => {
+    const primaryHeroContent = contentTexts.find((item) => item.key === HERO_PRIMARY_SLIDE_KEY);
+
+    let parsed = defaultPrimaryHeroSlide;
+    if (primaryHeroContent?.content) {
+      try {
+        parsed = {
+          ...defaultPrimaryHeroSlide,
+          ...JSON.parse(primaryHeroContent.content),
+        };
+      } catch {
+        parsed = defaultPrimaryHeroSlide;
+      }
+    }
+
+    setCarouselForm({
+      id: primaryHeroContent?.id || '',
+      imageUrl: parsed.imageUrl || '',
+      mobileImageUrl: parsed.mobileImageUrl || '',
+      title: parsed.title,
+      titleHighlight: parsed.titleHighlight,
+      subtitle: parsed.subtitle,
+      link: parsed.link,
+      buttonText: parsed.buttonText,
+      titleColor: parsed.titleColor,
+      titleColorEnd: parsed.titleColorEnd,
+      subtitleColor: parsed.subtitleColor,
+      linkColor: parsed.linkColor,
+      order: 0,
+      isActive: true,
+    });
+    setPrimarySlideContentId(primaryHeroContent?.id || null);
+    setIsPrimaryCarouselEdit(true);
+    setEditingId(primaryHeroContent?.id || null);
+    setShowCarouselForm(true);
+  };
+
   // Carousel handlers
   const handleSaveCarouselItem = async () => {
     try {
       setLoading(true);
-      if (!carouselForm.imageUrl) {
-        alert('A imagem é obrigatória para o carrossel');
-        setLoading(false);
-        return;
-      }
-      if (editingId) {
-        await carouselAPI.update(editingId, carouselForm);
+      if (isPrimaryCarouselEdit) {
+        const primaryPayload = {
+          imageUrl: carouselForm.imageUrl || '',
+          mobileImageUrl: carouselForm.mobileImageUrl || '',
+          title: carouselForm.title || defaultPrimaryHeroSlide.title,
+          titleHighlight: carouselForm.titleHighlight || defaultPrimaryHeroSlide.titleHighlight,
+          subtitle: carouselForm.subtitle || defaultPrimaryHeroSlide.subtitle,
+          link: carouselForm.link || defaultPrimaryHeroSlide.link,
+          buttonText: carouselForm.buttonText || defaultPrimaryHeroSlide.buttonText,
+          titleColor: carouselForm.titleColor || defaultPrimaryHeroSlide.titleColor,
+          titleColorEnd: carouselForm.titleColorEnd || defaultPrimaryHeroSlide.titleColorEnd,
+          subtitleColor: carouselForm.subtitleColor || defaultPrimaryHeroSlide.subtitleColor,
+          linkColor: carouselForm.linkColor || defaultPrimaryHeroSlide.linkColor,
+        };
+
+        if (primarySlideContentId) {
+          await contentAPI.update(primarySlideContentId, {
+            key: HERO_PRIMARY_SLIDE_KEY,
+            title: 'Slide principal da Home',
+            content: JSON.stringify(primaryPayload),
+            imageUrl: carouselForm.imageUrl || '',
+          });
+        } else {
+          await contentAPI.create({
+            key: HERO_PRIMARY_SLIDE_KEY,
+            title: 'Slide principal da Home',
+            content: JSON.stringify(primaryPayload),
+            imageUrl: carouselForm.imageUrl || '',
+          });
+        }
       } else {
-        await carouselAPI.create(carouselForm);
+        if (!carouselForm.imageUrl) {
+          alert('A imagem é obrigatória para o carrossel');
+          setLoading(false);
+          return;
+        }
+        if (editingId) {
+          await carouselAPI.update(editingId, carouselForm);
+        } else {
+          await carouselAPI.create(carouselForm);
+        }
       }
+
       await loadAllData();
-      setCarouselForm({ id: '', imageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', subtitleColor: '#F3F4F6', linkColor: '#FFFFFF', order: 0, isActive: true });
+      setCarouselForm({ id: '', imageUrl: '', mobileImageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', subtitleColor: '#F3F4F6', linkColor: '#FFFFFF', order: 0, isActive: true });
       setShowCarouselForm(false);
+      setIsPrimaryCarouselEdit(false);
       setEditingId(null);
     } catch (error) {
       console.error('Erro ao salvar item do carrossel:', error);
@@ -2413,6 +2836,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const handleEditCarouselItem = (item: CarouselItem) => {
     setCarouselForm(item);
+    setIsPrimaryCarouselEdit(false);
     setEditingId(item.id);
     setShowCarouselForm(true);
   };
@@ -2637,6 +3061,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <span>Movimentos</span>
             </button>
             <button
+              onClick={() => setActiveTab('escritos-textos')}
+              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${activeTab === 'escritos-textos'
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-amber-50'
+                }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>Textos</span>
+            </button>
+            <button
               onClick={() => setActiveTab('padres')}
               className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${activeTab === 'padres'
                 ? 'bg-amber-600 text-white'
@@ -2665,6 +3099,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             >
               <ImageIcon className="w-5 h-5" />
               <span>Início</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('acessos')}
+              className={`flex items-center space-x-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${activeTab === 'acessos'
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-amber-50'
+                }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>Acessos</span>
             </button>
             <button
               onClick={() => setActiveTab('brasao')}
@@ -2710,7 +3154,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </div>
 
                 <div className="space-y-8">
-                  {Object.entries(groupEventsByMonth(eventosFiltrados)).map(([monthKey, monthEvents]) => {
+                  {Object.entries(groupEventsByMonth(eventosFiltrados))
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([monthKey, monthEvents]) => {
                     const monthYear = formatMonthYearFromKey(monthKey);
 
                     return (
@@ -2812,7 +3258,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-2xl font-bold text-amber-900">Gestão de Programações</h2>
                   <button
-                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '00:00 às 00:00', location: '', description: '', category: 'Missa', acceptsRegistration: false }); setEditingId(null); setEditingProgramSource(null); setShowEventForm(true); }}
+                    onClick={() => { setEventForm({ id: '', title: '', date: '', time: '', location: '', description: '', category: 'Missa', acceptsRegistration: false }); setEditingId(null); setEditingProgramSource(null); setShowEventForm(true); }}
                     className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-5 h-5" />
@@ -3052,12 +3498,40 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-amber-900">Capelas</h2>
-                    <button onClick={() => { setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '', description: '', photoUrl: '' }); setEditingId(null); setShowChapelForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:shadow-lg text-sm">
-                      <Plus className="w-4 h-4" />
-                      <span>Nova Capela</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleEditMatrizAsChapel}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:shadow-lg text-sm"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Editar Matriz</span>
+                      </button>
+                      <button onClick={() => { setChapelForm({ id: '', name: '', neighborhood: '', address: '', number: '', coordinator: '', phone: '', email: '', description: '', photoUrl: '' }); setEditingId(null); setShowChapelForm(true); }} className="flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 rounded-lg font-semibold transition-all hover:shadow-lg text-sm">
+                        <Plus className="w-4 h-4" />
+                        <span>Nova Capela</span>
+                      </button>
+                    </div>
                   </div>
+
                   <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-white border-2 border-amber-100 rounded-xl p-6 hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-amber-900 mb-1">Matriz: {mapMainCardForm.title}</h3>
+                          <p className="text-sm text-gray-600 mb-1">{mapMainCardForm.badge}</p>
+                          <p className="text-sm text-gray-600 flex items-center">
+                            <MapPin className="w-4 h-4 mr-1 text-amber-600" />
+                            {mapMainCardForm.address}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <ActionIconButton onClick={handleEditMatrizAsChapel} title="Editar Matriz" variant="edit" iconSizeClass="w-4 h-4">
+                            <Edit className="w-4 h-4" />
+                          </ActionIconButton>
+                        </div>
+                      </div>
+                    </div>
+
                     {chapels.map((chapel) => (
                       <div key={chapel.id} className="bg-white border-2 border-amber-100 rounded-xl p-6 hover:shadow-lg transition-all">
                         <div className="flex items-start justify-between">
@@ -3162,6 +3636,121 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       ));
                     })()}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Textos Institucionais Tab */}
+            {activeTab === 'escritos-textos' && (
+              <div className="space-y-8">
+                <div className="bg-white border-2 border-amber-100 rounded-xl p-6">
+                  <h2 className="text-2xl font-bold text-amber-900 mb-2">Sobre Nós</h2>
+                  <p className="text-gray-600 mb-4">Este texto aparece na seção Sobre Nós da página pública.</p>
+                  <textarea
+                    value={aboutTextForm}
+                    onChange={(e) => setAboutTextForm(e.target.value)}
+                    rows={10}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-600 focus:bg-white transition-all outline-none resize-y"
+                    placeholder="Digite o texto de Sobre Nós..."
+                  />
+                  <button
+                    onClick={handleSaveAboutText}
+                    className="mt-4 flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-3 rounded-xl font-semibold transition-all hover:shadow-lg"
+                  >
+                    <Save className="w-5 h-5" />
+                    <span>Salvar Sobre Nós</span>
+                  </button>
+                </div>
+
+                <div className="bg-white border-2 border-amber-100 rounded-xl p-6">
+                  <h2 className="text-2xl font-bold text-amber-900 mb-2">História Completa</h2>
+                  <p className="text-gray-600 mb-4">Este texto aparece na página História Completa no site público.</p>
+                  <textarea
+                    value={fullHistoryTextForm}
+                    onChange={(e) => setFullHistoryTextForm(e.target.value)}
+                    rows={14}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-600 focus:bg-white transition-all outline-none resize-y"
+                    placeholder="Digite o texto de História Completa..."
+                  />
+                  <button
+                    onClick={handleSaveFullHistoryText}
+                    className="mt-4 flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-3 rounded-xl font-semibold transition-all hover:shadow-lg"
+                  >
+                    <Save className="w-5 h-5" />
+                    <span>Salvar História Completa</span>
+                  </button>
+                </div>
+
+                <div className="bg-white border-2 border-amber-100 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-amber-900 mb-1">Linha do Tempo Paroquial</h2>
+                      <p className="text-gray-600">Edite os marcos históricos exibidos na página História Completa.</p>
+                    </div>
+                    <button
+                      onClick={handleAddTimelineEntry}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Novo Marco</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {timelineForm.map((item, index) => (
+                      <div key={index} className="border border-amber-200 rounded-xl p-4 bg-amber-50/40">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                          <input
+                            type="text"
+                            placeholder="Ano (ex: 1952)"
+                            value={item.year}
+                            onChange={(e) => handleTimelineFieldChange(index, 'year', e.target.value)}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Título"
+                            value={item.title}
+                            onChange={(e) => handleTimelineFieldChange(index, 'title', e.target.value)}
+                            className="md:col-span-2 w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                          />
+                          <select
+                            value={item.icon || 'church'}
+                            onChange={(e) => handleTimelineFieldChange(index, 'icon', e.target.value)}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none"
+                          >
+                            {timelineIconOptions.map((iconOption) => (
+                              <option key={iconOption.value} value={iconOption.value}>{iconOption.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <textarea
+                          placeholder="Descrição do marco"
+                          rows={4}
+                          value={item.description}
+                          onChange={(e) => handleTimelineFieldChange(index, 'description', e.target.value)}
+                          className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-600 outline-none resize-y"
+                        />
+                        <div className="flex justify-end mt-3">
+                          <button
+                            onClick={() => handleRemoveTimelineEntry(index)}
+                            className="flex items-center space-x-1 bg-red-100 hover:bg-red-200 text-red-700 px-3 py-2 rounded-lg font-medium transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Remover</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleSaveTimeline}
+                    className="mt-5 flex items-center space-x-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-3 rounded-xl font-semibold transition-all hover:shadow-lg"
+                  >
+                    <Save className="w-5 h-5" />
+                    <span>Salvar Linha do Tempo</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -3545,18 +4134,30 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
             {activeTab === 'inicio' && (
               <div>
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold text-amber-900">Configurações da Página Inicial</h2>
-                  <button
-                    onClick={() => {
-                      setCarouselForm({ id: '', imageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', subtitleColor: '#F3F4F6', linkColor: '#FFFFFF', order: 0, isActive: true });
-                      setEditingId(null);
-                      setShowCarouselForm(true);
-                    }}
-                    className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>Novo Carrossel</span>
-                  </button>
+                  <div>
+                    <h2 className="text-2xl font-bold text-amber-900">Configurações da Página Inicial</h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleEditPrimaryHeroSlide}
+                      className="flex items-center space-x-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                    >
+                      <Edit className="w-5 h-5" />
+                      <span>Editar Slide Principal</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCarouselForm({ id: '', imageUrl: '', mobileImageUrl: '', title: '', titleHighlight: '', subtitle: '', link: '', buttonText: 'Saiba Mais', titleColor: '#FFFFFF', titleColorEnd: '#F59E0B', subtitleColor: '#F3F4F6', linkColor: '#FFFFFF', order: 0, isActive: true });
+                        setIsPrimaryCarouselEdit(false);
+                        setEditingId(null);
+                        setShowCarouselForm(true);
+                      }}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Novo Carrossel</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {carouselItems.sort((a, b) => a.order - b.order).map((item) => (
@@ -3614,6 +4215,28 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       </div>
                     </div>
                   ))}
+                </div>
+
+              </div>
+            )}
+
+            {activeTab === 'acessos' && (
+              <div>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-amber-900">Acessos do Site</h2>
+                  <p className="text-gray-600 mt-1">Contabilizador de acessos registrados no site público.</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border-2 border-amber-100 p-8 max-w-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total de acessos</p>
+                      <p className="text-4xl font-bold text-amber-900">{siteVisitsCount}</p>
+                    </div>
+                    <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                      <Users className="w-7 h-7" />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -3756,9 +4379,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <CarouselFormModal
           editingId={editingId}
           carouselForm={carouselForm}
-          onClose={() => { setShowCarouselForm(false); setEditingId(null); }}
+          isPrimarySlide={isPrimaryCarouselEdit}
+          onClose={() => { setShowCarouselForm(false); setIsPrimaryCarouselEdit(false); setEditingId(null); }}
           onSave={handleSaveCarouselItem}
           onImageUrlChange={handleCarouselImageUrlChange}
+          onMobileImageUrlChange={handleCarouselMobileImageUrlChange}
           onTitleChange={handleCarouselTitleChange}
           onTitleHighlightChange={handleCarouselTitleHighlightChange}
           onSubtitleChange={handleCarouselSubtitleChange}
@@ -3805,7 +4430,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <ChapelFormModal
           editingId={editingId}
           chapelForm={chapelForm}
-          onClose={() => { setShowChapelForm(false); setEditingId(null); }}
+          entityLabel={isEditingMatrizAsChapel ? 'Matriz' : 'Capela'}
+          onClose={() => { setShowChapelForm(false); setIsEditingMatrizAsChapel(false); setEditingId(null); }}
           onSave={handleSaveChapel}
           onNameChange={handleChapelNameChange}
           onNeighborhoodChange={handleChapelNeighborhoodChange}

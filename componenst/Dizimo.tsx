@@ -3,6 +3,7 @@ import { Footer } from './Footer';
 import { Heart, Landmark, Smartphone, Copy, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { contentAPI } from '../src/services/api';
+import pixImg from '../Styles/img/pix.png';
 
 interface Props {
     onNavigate: (page: string) => void;
@@ -38,7 +39,7 @@ export function Dizimo({ onNavigate, currentPage, onAdminClick }: Props) {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
                     <div className="text-center mb-16 animate-fade-in-up">
-                        <span className="text-amber-600 font-bold tracking-widest uppercase text-sm">Devolução a Deus</span>
+                        <span className="text-amber-600 font-bold tracking-widest uppercase text-sm">Gratidão e Partilha</span>
                         <h1 className="text-5xl md:text-6xl font-extrabold text-amber-900 mt-4 mb-6 tracking-tight flex items-center justify-center gap-4">
                             <Heart className="w-10 h-10 md:w-12 md:h-12 text-amber-600 fill-amber-600" />
                             Dízimo e Ofertas
@@ -134,12 +135,9 @@ export function Dizimo({ onNavigate, currentPage, onAdminClick }: Props) {
                                 </h3>
 
                                 <div className="flex flex-col sm:flex-row items-center gap-8 relative z-10">
-                                    {/* QR Code Placeholder */}
-                                    <div className="w-40 h-40 bg-white rounded-2xl p-3 shadow-lg flex-shrink-0 group-hover:scale-105 transition-transform">
-                                        {/* Aqui entraria a imagem real do qrcode */}
-                                        <div className="w-full h-full border-4 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-gray-50 text-gray-400 font-bold text-sm text-center">
-                                            Insira o QR Code<br />Aqui
-                                        </div>
+                                    {/* QR Code */}
+                                    <div className="w-40 h-40 bg-white rounded-2xl p-3 shadow-lg flex-shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
+                                        <img src={pixImg} alt="QR Code PIX Paróquia Santo André" className="max-w-full max-h-full rounded-xl object-contain" />
                                     </div>
 
                                     <div className="flex-1 w-full space-y-4">

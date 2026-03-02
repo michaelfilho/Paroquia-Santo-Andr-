@@ -879,7 +879,9 @@ export const registrationLinksAPI = {
 // Content Text endpoints
 export const contentAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/public/content`);
+    const response = await fetch(`${API_BASE_URL}/public/content?t=${Date.now()}`, {
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       throw new Error('Erro ao buscar textos');
@@ -889,17 +891,31 @@ export const contentAPI = {
   },
 
   getByKey: async (key: string) => {
-    const response = await fetch(`${API_BASE_URL}/public/content/${key}`);
-
-    if (response.status === 404) {
-      return null;
-    }
+    const response = await fetch(`${API_BASE_URL}/public/content?t=${Date.now()}`, {
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       throw new Error('Erro ao buscar texto');
     }
 
-    return response.json();
+    const allContent = await response.json();
+    if (!Array.isArray(allContent)) {
+      return null;
+    }
+
+    const matches = allContent.filter((item: any) => item?.key === key);
+    if (!matches.length) {
+      return null;
+    }
+
+    matches.sort((a: any, b: any) => {
+      const aTime = new Date(a?.updatedAt || a?.createdAt || 0).getTime();
+      const bTime = new Date(b?.updatedAt || b?.createdAt || 0).getTime();
+      return bTime - aTime;
+    });
+
+    return matches[0];
   },
 
   create: async (contentData: any) => {
@@ -1304,6 +1320,31 @@ export const candlesAPI = {
 
     if (!response.ok) {
       throw new Error('Erro ao incrementar contador de velas');
+    }
+
+    return response.json();
+  },
+};
+
+export const siteVisitsAPI = {
+  getCount: async () => {
+    const response = await fetch(`${API_BASE_URL}/public/site-visits/count`);
+    if (!response.ok) {
+      throw new Error('Erro ao buscar contador de acessos');
+    }
+    return response.json();
+  },
+
+  increment: async () => {
+    const response = await fetch(`${API_BASE_URL}/public/site-visits/increment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao incrementar contador de acessos');
     }
 
     return response.json();

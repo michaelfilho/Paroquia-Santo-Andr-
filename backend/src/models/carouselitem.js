@@ -52,6 +52,10 @@ const CarouselItem = sequelize.define('CarouselItem', {
         type: DataTypes.STRING(255),
         field: 'image_url'
     },
+    mobileImageUrl: {
+        type: DataTypes.STRING(255),
+        field: 'mobile_image_url'
+    },
     order: {
         type: DataTypes.INTEGER,
         defaultValue: 0

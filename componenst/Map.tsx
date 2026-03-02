@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
-import { chapelsAPI } from '../src/services/api';
+import { chapelsAPI, contentAPI } from '../src/services/api';
+
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://admin.paroquiataruma.com/api');
+const backendOrigin = rawApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
 
 interface Chapel {
   id: string | number;
@@ -16,12 +19,40 @@ interface Chapel {
   position: { x: number; y: number };
 }
 
+const MAP_MAIN_CARD_KEY = 'map_main_card';
+
+const defaultMainCard = {
+  imageUrl: '',
+  title: 'Paróquia Santo André',
+  badge: 'Centro',
+  address: 'R. das Violetas, 257, Tarumã - SP',
+  googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000',
+  routeLabel: 'Ver rota no Google Maps',
+};
+
 export function Map() {
   const [chapels, setChapels] = useState<Chapel[]>([]);
+  const [mainCard, setMainCard] = useState(defaultMainCard);
 
   useEffect(() => {
     loadChapels();
+    loadMainCardContent();
   }, []);
+
+  const loadMainCardContent = async () => {
+    try {
+      const content = await contentAPI.getByKey(MAP_MAIN_CARD_KEY);
+      if (!content?.content) return;
+
+      const parsed = JSON.parse(content.content);
+      setMainCard((prev) => ({
+        ...prev,
+        ...parsed,
+      }));
+    } catch (error) {
+      console.error('Erro ao carregar card principal do mapa:', error);
+    }
+  };
 
   const loadChapels = async () => {
     try {
@@ -54,9 +85,9 @@ export function Map() {
 
   const getImageUrl = (url?: string) => {
     if (!url) return '';
-    if (url.startsWith('http')) return url;
-    if (url.startsWith('data:')) return url;
-    return `http://localhost:3000${url}`;
+    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+    if (url.startsWith('/')) return `${backendOrigin}${url}`;
+    return `${backendOrigin}/${url.replace(/^\/+/, '')}`;
   };
 
   const getDefaultChapels = (): Chapel[] => [
@@ -130,6 +161,12 @@ export function Map() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const openMainCardDirections = () => {
+    const url = (mainCard.googleMapsUrl || '').trim();
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (chapels.length === 0) {
     return (
       <section id="matriz" className="py-12 md:py-24 bg-gradient-to-b from-amber-50/30 to-white relative overflow-hidden">
@@ -167,15 +204,24 @@ export function Map() {
           <div
             role="button"
             tabIndex={0}
-            onClick={() => window.open('https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000', '_blank')}
+            onClick={openMainCardDirections}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                window.open('https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000', '_blank');
+                openMainCardDirections();
               }
             }}
             className="group bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-amber-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 cursor-pointer w-full max-w-md focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
+            {mainCard.imageUrl && (
+              <div className="mb-4 overflow-hidden rounded-xl border border-amber-100 bg-slate-100">
+                <ImageWithFallback
+                  src={getImageUrl(mainCard.imageUrl)}
+                  alt={mainCard.title}
+                  className="w-full h-44 object-cover object-[60%_78%] group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            )}
             <div className="flex items-start gap-4">
               <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
                 <MapPin className="w-5 h-5 text-amber-700" />
@@ -183,19 +229,19 @@ export function Map() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
                   <h4 className="font-bold text-amber-900 text-lg leading-snug group-hover:text-amber-700 transition-colors">
-                    Paróquia Santo André
+                    {mainCard.title}
                   </h4>
                   <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full whitespace-nowrap">
-                    Centro
+                    {mainCard.badge}
                   </span>
                 </div>
 
                 <p className="text-gray-600 text-sm mt-2">
-                  R. das Violetas, 257, Tarumã - SP
+                  {mainCard.address}
                 </p>
 
                 <div className="mt-4 pt-3 border-t border-amber-100 space-y-1.5 text-sm text-gray-700">
-                  <p className="text-amber-700 font-semibold">Ver rota no Google Maps</p>
+                  <p className="text-amber-700 font-semibold">{mainCard.routeLabel}</p>
                 </div>
               </div>
             </div>

@@ -20,16 +20,128 @@ import { PedidosOracao } from './componenst/PedidosOracao';
 import { Dizimo } from './componenst/Dizimo';
 import { Noticias } from './componenst/Noticias';
 import { Contato } from './componenst/Contato';
-import { candlesAPI } from './src/services/api';
+import { candlesAPI, siteVisitsAPI } from './src/services/api';
 
 export type PageType = 'home' | 'inscricoes' | 'guias' | 'admin-login' | 'admin-dashboard' | 'movimentos' | 'brasao' | 'historia-completa' | 'antigos-padres' | 'pedidos-oracao' | 'dizimo' | 'noticias' | 'contato';
 
+const normalizePath = (pathname: string) => {
+  let decodedPath = pathname;
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    decodedPath = pathname;
+  }
+
+  const withoutTrailingSlash = decodedPath.replace(/\/+$/, '') || '/';
+  const lowerPath = withoutTrailingSlash.toLowerCase();
+
+  if (lowerPath === '/paroquia') return '/inicio';
+  if (lowerPath.startsWith('/paroquia/')) {
+    return lowerPath.slice('/paroquia'.length);
+  }
+
+  return lowerPath;
+};
+
+const getPageFromPath = (pathname: string): PageType | null => {
+  const path = normalizePath(pathname);
+
+  switch (path) {
+    case '/':
+    case '/inicio':
+      return 'home';
+    case '/inscricoes':
+      return 'inscricoes';
+    case '/guias':
+      return 'guias';
+    case '/admin':
+      return 'admin-login';
+    case '/admin/dashboard':
+      return 'admin-dashboard';
+    case '/movimentos':
+      return 'movimentos';
+    case '/brasao':
+    case '/brasão':
+      return 'brasao';
+    case '/historia-completa':
+    case '/historia completa':
+      return 'historia-completa';
+    case '/antigos-padres':
+      return 'antigos-padres';
+    case '/pedidos-oracao':
+      return 'pedidos-oracao';
+    case '/dizimo':
+      return 'dizimo';
+    case '/noticias':
+      return 'noticias';
+    case '/contato':
+      return 'contato';
+    default:
+      return null;
+  }
+};
+
+const getPathFromPage = (page: PageType) => {
+  switch (page) {
+    case 'home':
+      return '/inicio';
+    case 'inscricoes':
+      return '/inscricoes';
+    case 'guias':
+      return '/guias';
+    case 'admin-login':
+      return '/admin';
+    case 'admin-dashboard':
+      return '/admin/dashboard';
+    case 'movimentos':
+      return '/movimentos';
+    case 'brasao':
+      return '/brasao';
+    case 'historia-completa':
+      return '/historia-completa';
+    case 'antigos-padres':
+      return '/antigos-padres';
+    case 'pedidos-oracao':
+      return '/pedidos-oracao';
+    case 'dizimo':
+      return '/dizimo';
+    case 'noticias':
+      return '/noticias';
+    case 'contato':
+      return '/contato';
+    default:
+      return '/inicio';
+  }
+};
+
 export default function App() {
   const [selectedEvent, setSelectedEvent] = useState<string | number | null>(null);
-  const [currentPage, setCurrentPage] = useState<PageType>('home');
+  const [currentPage, setCurrentPage] = useState<PageType>(() => getPageFromPath(window.location.pathname) ?? 'home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [litCandlesCount, setLitCandlesCount] = useState(0);
+
+  useEffect(() => {
+    const initialPage = getPageFromPath(window.location.pathname);
+    if (!initialPage) {
+      window.history.replaceState({}, '', getPathFromPage('home'));
+    }
+
+    const handlePopState = () => {
+      const page = getPageFromPath(window.location.pathname) ?? 'home';
+      setCurrentPage(page);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const targetPath = getPathFromPage(currentPage);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     const loadCandles = async () => {
@@ -42,6 +154,25 @@ export default function App() {
     };
 
     loadCandles();
+  }, []);
+
+  useEffect(() => {
+    const registerVisit = async () => {
+      try {
+        const initialPage = getPageFromPath(window.location.pathname) ?? 'home';
+        if (initialPage !== 'home') return;
+
+        const key = 'site_visit_registered_tab';
+        if (sessionStorage.getItem(key)) return;
+
+        await siteVisitsAPI.increment();
+        sessionStorage.setItem(key, '1');
+      } catch (error) {
+        console.error('Erro ao registrar acesso ao site:', error);
+      }
+    };
+
+    registerVisit();
   }, []);
 
   const handleCandleLit = () => {
@@ -127,9 +258,9 @@ export default function App() {
         <Hero />
         <About litCandlesCount={litCandlesCount} />
         <Clergy />
-        <Map />
-        <PastEvents onViewPhotos={setSelectedEvent} />
         <FutureEvents />
+        <PastEvents onViewPhotos={setSelectedEvent} />
+        <Map />
       </main>
       <Footer onAdminClick={handleAdminClick} />
 

@@ -32,7 +32,7 @@ router.get('/public', async (req, res) => {
 // Criar novo item no carrossel
 router.post('/', async (req, res) => {
     try {
-        const { title, titleHighlight, subtitle, link, buttonText, titleColor, titleColorEnd, subtitleColor, linkColor, imageUrl, order, isActive } = req.body;
+        const { title, titleHighlight, subtitle, link, buttonText, titleColor, titleColorEnd, subtitleColor, linkColor, imageUrl, mobileImageUrl, order, isActive } = req.body;
         const newItem = await CarouselItem.create({
             title,
             titleHighlight,
@@ -44,6 +44,7 @@ router.post('/', async (req, res) => {
             subtitleColor: subtitleColor || '#F3F4F6',
             linkColor: linkColor || '#FFFFFF',
             imageUrl,
+            mobileImageUrl,
             order: order || 0,
             isActive: isActive !== undefined ? isActive : true
         });
@@ -58,7 +59,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, titleHighlight, subtitle, link, buttonText, titleColor, titleColorEnd, subtitleColor, linkColor, imageUrl, order, isActive } = req.body;
+        const { title, titleHighlight, subtitle, link, buttonText, titleColor, titleColorEnd, subtitleColor, linkColor, imageUrl, mobileImageUrl, order, isActive } = req.body;
 
         const item = await CarouselItem.findByPk(id);
         if (!item) {
@@ -76,6 +77,7 @@ router.put('/:id', async (req, res) => {
             subtitleColor: subtitleColor || '#F3F4F6',
             linkColor: linkColor || '#FFFFFF',
             imageUrl,
+            mobileImageUrl,
             order,
             isActive
         });

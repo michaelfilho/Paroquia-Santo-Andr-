@@ -12,6 +12,25 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
+  const HEADER_OFFSET = 80;
+  const PENDING_SCROLL_KEY = 'pendingScrollTarget';
+
+  const scrollToSectionById = (id: string, attempt = 0) => {
+    const element = document.getElementById(id);
+
+    if (element) {
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - HEADER_OFFSET;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      sessionStorage.removeItem(PENDING_SCROLL_KEY);
+      return;
+    }
+
+    if (attempt < 30) {
+      window.setTimeout(() => scrollToSectionById(id, attempt + 1), 80);
+    }
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -20,26 +39,21 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (currentPage !== 'home') return;
+
+    const pendingId = sessionStorage.getItem(PENDING_SCROLL_KEY);
+    if (pendingId) {
+      scrollToSectionById(pendingId);
+    }
+  }, [currentPage]);
+
   const scrollToSection = (id: string) => {
     if (currentPage !== 'home' && onNavigate) {
+      sessionStorage.setItem(PENDING_SCROLL_KEY, id);
       onNavigate('home');
-      setTimeout(() => {
-        const element = document.getElementById(id);
-        if (element) {
-          const offset = 80;
-          const elementPosition = element.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.pageYOffset - offset;
-          window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-        }
-      }, 100);
     } else {
-      const element = document.getElementById(id);
-      if (element) {
-        const offset = 80;
-        const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - offset;
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-      }
+      scrollToSectionById(id);
     }
     setIsMenuOpen(false);
     setOpenDropdown(null);
@@ -74,7 +88,7 @@ export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
       children: [
         { label: 'Clero', id: 'clero', type: 'scroll' },
         { label: 'Guias', id: 'guias', type: 'page' },
-        { label: 'Matriz', id: 'matriz', type: 'scroll' },
+        { label: 'Matriz e Capelas', id: 'matriz', type: 'scroll' },
         { label: 'Movimentos/Pastorais', id: 'movimentos', type: 'page' },
         { label: 'Inscrições', id: 'inscricoes', type: 'page' },
         { label: 'Brasão', id: 'brasao', type: 'page' },

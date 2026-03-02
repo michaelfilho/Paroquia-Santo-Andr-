@@ -240,6 +240,9 @@ app.get('/api/public/guides', async (req, res) => {
 
 app.get('/api/public/content', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     const { ContentText } = require('./models');
     const texts = await ContentText.findAll();
     res.json(texts);
@@ -250,6 +253,9 @@ app.get('/api/public/content', async (req, res) => {
 
 app.get('/api/public/content/:key', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     const { ContentText } = require('./models');
     const text = await ContentText.findOne({ where: { key: req.params.key } });
     if (!text) return res.status(404).json({ message: 'Texto não encontrado' });
@@ -290,6 +296,40 @@ app.post('/api/public/candles/increment', async (req, res) => {
     res.json({ count: next });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao incrementar contador de velas', error: error.message });
+  }
+});
+
+app.get('/api/public/site-visits/count', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const counter = await ContentText.findOne({ where: { key: 'site_visits_count' } });
+    const count = counter ? Number(counter.content || '0') : 0;
+    res.json({ count: Number.isNaN(count) ? 0 : count });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar contador de acessos', error: error.message });
+  }
+});
+
+app.post('/api/public/site-visits/increment', async (req, res) => {
+  try {
+    const { ContentText } = require('./models');
+    const counter = await ContentText.findOne({ where: { key: 'site_visits_count' } });
+
+    if (!counter) {
+      const created = await ContentText.create({
+        key: 'site_visits_count',
+        title: 'Contador de Acessos ao Site',
+        content: '1',
+      });
+      return res.json({ count: 1, recordId: created.id });
+    }
+
+    const current = Number(counter.content || '0');
+    const next = (Number.isNaN(current) ? 0 : current) + 1;
+    await counter.update({ content: String(next) });
+    res.json({ count: next });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao incrementar contador de acessos', error: error.message });
   }
 });
 
@@ -385,6 +425,7 @@ const initializeServer = async () => {
         { name: 'title_color_end', type: "TEXT DEFAULT '#F59E0B'" },
         { name: 'subtitle_color', type: "TEXT DEFAULT '#F3F4F6'" },
         { name: 'link_color', type: "TEXT DEFAULT '#FFFFFF'" },
+        { name: 'mobile_image_url', type: 'TEXT' },
       ]);
     };
 
