@@ -1,119 +1,144 @@
-# 🏛️ Paróquia Santo André - Site Oficial
+# Paróquia Santo André — Site + API
 
-Site oficial da Paróquia Santo André em Tarumã - SP. Desenvolvido com React, TypeScript e Tailwind CSS.
+Projeto completo do site oficial da Paróquia Santo André (Tarumã/SP), com:
 
-## 📋 Funcionalidades
+- Frontend em React + TypeScript + Vite
+- Backend em Node.js + Express + Sequelize
+- Banco local com SQLite (desenvolvimento) e opção de PostgreSQL/MySQL em produção
 
-- ✨ **Página Inicial** - Hero section com informações da paróquia
-- 📖 **Sobre Nós** - História e missão da paróquia
-- 👥 **Clero** - Informações sobre padres e vigários
-- 🗺️ **Mapa** - Localização das capelas em Tarumã
-- 📅 **Eventos Passados** - Galeria de eventos realizados
-- 🎯 **Eventos Futuros** - Programação de eventos e celebrações
-- 📝 **Inscrições** - Sistema de inscrição para eventos
-- 🔐 **Painel Admin** - Área administrativa para gerenciar conteúdo
+## Tecnologias
 
-## 🚀 Como Executar
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Express
+- Sequelize
 
-### Pré-requisitos
+## Estrutura
 
-- Node.js 18+ instalado
-- npm ou yarn
+```text
+.
+├─ App.tsx / main.tsx            # Frontend (Vite)
+├─ componenst/                   # Componentes React
+├─ src/services/api.ts           # Cliente HTTP do frontend
+├─ Styles/                       # CSS global e imagens
+└─ backend/
+	├─ src/server.js              # API principal
+	├─ src/models/                # Modelos Sequelize
+	├─ src/routes/                # Rotas da API
+	├─ scripts/                   # Scripts de setup/migração/admin
+	└─ db/                        # SQLite local
+```
 
-### Instalação
+## Pré-requisitos
 
-1. **Instalar dependências:**
+- Node.js 20+
+- npm 10+
+
+## Setup local (frontend + backend)
+
+### 1) Instalar dependências
+
+Na raiz:
+
 ```bash
 npm install
 ```
 
-2. **Iniciar servidor de desenvolvimento:**
+No backend:
+
+```bash
+cd backend
+npm install
+```
+
+### 2) Configurar variáveis de ambiente
+
+Backend (`backend/.env`) — exemplo local mínimo:
+
+```env
+NODE_ENV=development
+PORT=3000
+JWT_SECRET=troque_por_um_segredo_forte
+JWT_EXPIRE=7d
+```
+
+Frontend (`.env.development`) — já compatível com backend local em `3000`:
+
+```env
+VITE_API_BASE_URL=http://localhost:3000/api
+```
+
+### 3) Rodar o backend
+
+```bash
+cd backend
+npm run dev
+```
+
+### 4) Rodar o frontend
+
+Em outro terminal, na raiz:
+
 ```bash
 npm run dev
 ```
 
-3. **Acessar o site:**
-Abra o navegador em `http://localhost:5173`
+### 5) Acessar
 
-### Build para Produção
+- Frontend: `http://localhost:5173`
+- Health da API: `http://localhost:3000/api/health`
+
+## Banco de dados
+
+- Desenvolvimento: SQLite automático em `backend/db/paroquia.db`
+- Produção: configure `DB_DIALECT`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+
+Exemplo completo de produção: `backend/.env.example`
+
+## Scripts úteis
+
+### Frontend (raiz)
 
 ```bash
+npm run dev
 npm run build
+npm run preview
+npm run lint
 ```
 
-Os arquivos otimizados estarão na pasta `dist/`.
+### Backend (`backend/`)
 
-## 🔐 Acesso Administrativo
-
-- **Usuário:** `xxxx`
-- **Senha:** `xxxx`
-
-## 📁 Estrutura do Projeto
-
-```
-Paroquia Santo André/
-├── componenst/          # Componentes React
-│   ├── Header.tsx       # Cabeçalho e navegação
-│   ├── Hero.tsx         # Seção principal
-│   ├── About.tsx        # Sobre a paróquia
-│   ├── Clergy.tsx       # Informações do clero
-│   ├── Map.tsx          # Mapa das capelas
-│   ├── PastEvents.tsx   # Eventos passados
-│   ├── FutureEvents.tsx # Eventos futuros
-│   ├── EventGallery.tsx # Galeria de fotos
-│   ├── Inscrições.tsx   # Formulário de inscrições
-│   ├── AdminLogin.tsx   # Login administrativo
-│   ├── AdminDashboard.tsx # Painel administrativo
-│   ├── Footer.tsx       # Rodapé
-│   └── figma/
-│       └── image.tsx    # Componente de imagem
-├── Styles/
-│   └── global.css       # Estilos globais
-├── App.tsx              # Componente principal
-├── main.tsx             # Entrada da aplicação
-├── index.html           # HTML principal
-└── package.json         # Dependências
-```
-
-## 🎨 Tecnologias Utilizadas
-
-- **React 18** - Biblioteca JavaScript para interfaces
-- **TypeScript** - Tipagem estática
-- **Tailwind CSS** - Framework CSS utilitário
-- **Vite** - Build tool e dev server
-- **Lucide React** - Biblioteca de ícones
-
-## 🌐 Deploy no Hostinger
-
-1. Execute o build:
 ```bash
-npm run build
+npm run dev
+npm start
+npm run migrate
+npm run migrate:undo
+npm run seed
+npm run setup-admin
 ```
 
-2. Faça upload dos arquivos da pasta `dist/` para o servidor via FTP ou painel do Hostinger
+## Admin
 
-3. Configure o domínio para apontar para a pasta onde os arquivos foram enviados
+As credenciais de acesso não ficam fixas neste README.
 
-## 📝 Personalização
+Para criar/recriar administrador local, use:
 
-### Alterar Informações da Paróquia
+```bash
+cd backend
+npm run setup-admin
+```
 
-Edite os arquivos dos componentes em `componenst/` para atualizar:
-- Textos e descrições
-- Informações de contato
-- Eventos e programações
-- Dados do clero
+## Deploy
 
-### Alterar Cores e Estilos
+Guias detalhados no repositório:
 
-O tema principal usa tons de âmbar/dourado. Para alterar:
-1. Edite `tailwind.config.js` para mudar as cores
-2. Ajuste `Styles/global.css` para estilos globais
+- `DEPLOY_VPS_POSTGRES.md`
+- `COMANDOS_PRODUCAO_RAPIDO.md`
+- `DEPENDENCIAS_PARA_RODAR.md`
 
-## 🔧 Suporte
+## Observações
 
-Para dúvidas ou suporte, entre em contato com o desenvolvedor.
-
-## 📄 Licença
-
-© 2026 Paróquia Santo André - Todos os direitos reservados.
+- Algumas rotas e uploads usam URL base em `localhost:3000` no ambiente local.
+- Para produção, ajuste `VITE_API_BASE_URL` para o domínio público da API (ex.: `https://seu-dominio/api`).
