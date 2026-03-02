@@ -45,8 +45,8 @@ Os arquivos otimizados estarão na pasta `dist/`.
 
 ## 🔐 Acesso Administrativo
 
-- **Usuário:** `padre`
-- **Senha:** `123`
+- **Usuário:** `xxxx`
+- **Senha:** `xxxx`
 
 ## 📁 Estrutura do Projeto
 
