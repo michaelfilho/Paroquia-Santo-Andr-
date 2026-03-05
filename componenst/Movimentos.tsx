@@ -3,6 +3,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { Users, BookOpen, Heart, Music, Flame, HandHeart, ImageIcon, MessageCircle } from 'lucide-react';
 import { movementsAPI } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface PastoralMovement {
     id: string;
@@ -39,7 +40,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
     // Helper to render icon based on text or fallback
     const renderIcon = (mov: PastoralMovement) => {
         if (mov.iconUrl) {
-            const src = mov.iconUrl.startsWith('http') ? mov.iconUrl : `http://localhost:3000${mov.iconUrl}`;
+            const src = resolveAssetUrl(mov.iconUrl);
             return <img src={src} alt={mov.name} className="w-12 h-12 object-contain" />;
         }
         // Fallbacks for known names if no icon provided

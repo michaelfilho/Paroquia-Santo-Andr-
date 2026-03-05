@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ImageWithFallback } from './figma/image';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface EventGalleryProps {
   eventId: string;
@@ -24,7 +25,7 @@ export function EventGallery({ eventId, onClose }: EventGalleryProps) {
   const loadPhotos = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/public/event-photos/${eventId}`);
+      const response = await fetch(`/api/public/event-photos/${eventId}`);
       if (response.ok) {
         const data = await response.json();
         setPhotos(data);
@@ -88,7 +89,7 @@ export function EventGallery({ eventId, onClose }: EventGalleryProps) {
                 className="group aspect-square rounded-2xl overflow-hidden bg-gray-800 hover:scale-105 transition-all duration-500 cursor-pointer shadow-xl hover:shadow-2xl border border-white/10"
               >
                 <ImageWithFallback
-                  src={`http://localhost:3000${photo.path}`}
+                  src={resolveAssetUrl(photo.path)}
                   alt={`Foto ${index + 1}`}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />

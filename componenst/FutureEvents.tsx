@@ -10,7 +10,7 @@ interface FutureEvent {
   time: string;
   location: string;
   description: string;
-  category: 'missa' | 'evento' | 'retiro' | 'festa';
+  category: string;
   acceptsRegistration?: boolean;
   maxParticipants?: number | null;
   confirmedInscriptions?: number;
@@ -21,6 +21,20 @@ export function FutureEvents() {
   const [events, setEvents] = useState<FutureEvent[]>([]);
 
   const toBoolean = (value: unknown) => value === true || value === 1 || value === '1' || value === 'true';
+  const normalizeCategory = (category: unknown) => {
+    if (typeof category !== 'string' || !category.trim()) {
+      return 'evento';
+    }
+
+    const normalized = category
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (normalized === 'celebracao') return 'festa';
+    return normalized;
+  };
 
   useEffect(() => {
     loadFutureEvents();
@@ -65,7 +79,7 @@ export function FutureEvents() {
               ...event,
               month: monthYear.charAt(0).toUpperCase() + monthYear.slice(1),
               date: formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1),
-              category: event.category || 'evento',
+              category: normalizeCategory(event.category),
               confirmedInscriptions: event.confirmedInscriptions || 0,
             };
           })
@@ -94,7 +108,9 @@ export function FutureEvents() {
   };
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
+    const normalizedCategory = normalizeCategory(category);
+
+    switch (normalizedCategory) {
       case 'missa':
         return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'evento':
@@ -103,13 +119,21 @@ export function FutureEvents() {
         return 'bg-purple-100 text-purple-700 border-purple-200';
       case 'festa':
         return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'terco':
+        return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'adoracao':
+        return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      case 'confissao':
+        return 'bg-teal-100 text-teal-700 border-teal-200';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   const getCategoryLabel = (category: string) => {
-    switch (category) {
+    const normalizedCategory = normalizeCategory(category);
+
+    switch (normalizedCategory) {
       case 'missa':
         return 'Missa';
       case 'evento':
@@ -118,6 +142,12 @@ export function FutureEvents() {
         return 'Retiro';
       case 'festa':
         return 'Celebração';
+      case 'terco':
+        return 'Terço';
+      case 'adoracao':
+        return 'Adoração';
+      case 'confissao':
+        return 'Confissão';
       default:
         return 'Outro';
     }

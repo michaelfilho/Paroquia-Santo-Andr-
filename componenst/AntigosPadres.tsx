@@ -4,6 +4,7 @@ import { Footer } from './Footer';
 import { BookOpen, ImageIcon } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
 import { formerPriestsAPI } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface FormerPriest {
     id: string;
@@ -39,9 +40,7 @@ export function AntigosPadres({ onNavigate, currentPage, onAdminClick }: Props) 
     }, []);
 
     const getImageUrl = (url: string) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `http://localhost:3000${url}`;
+        return resolveAssetUrl(url);
     };
 
     return (

@@ -4,6 +4,7 @@ import { Footer } from './Footer';
 import { Calendar, ChevronRight, ImageIcon } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
 import { newsAPI } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface NewsItem {
     id: string;
@@ -40,9 +41,7 @@ export function Noticias({ onNavigate, currentPage, onAdminClick }: Props) {
     }, []);
 
     const getImageUrl = (url?: string) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `http://localhost:3000${url}`;
+        return resolveAssetUrl(url);
     };
 
     const formatDate = (dateString?: string) => {

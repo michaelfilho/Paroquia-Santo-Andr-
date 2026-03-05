@@ -3,9 +3,7 @@ import { ImageWithFallback } from './figma/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import churchBg from '../Styles/img/igreja.jpeg';
 import { carouselAPI, contentAPI } from '../src/services/api';
-
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://admin.paroquiataruma.com/api');
-const backendOrigin = rawApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface SlideData {
   id: string | number;
@@ -191,11 +189,7 @@ export function Hero() {
   const getImageUrl = (url?: string) => {
     const normalized = (url || '').trim();
     if (!normalized) return churchBg;
-    if (normalized.startsWith('http')) return normalized;
-    if (normalized.startsWith('data:') || normalized.startsWith('blob:')) return normalized;
-    if (normalized.startsWith('//')) return `https:${normalized}`;
-    if (normalized.startsWith('/')) return `${backendOrigin}${normalized}`;
-    return `${backendOrigin}/${normalized.replace(/^\/+/, '')}`;
+    return resolveAssetUrl(normalized);
   };
 
   return (

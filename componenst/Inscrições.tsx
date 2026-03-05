@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, ExternalLink, FileText } from 'lucide-react';
 import { registrationLinksAPI } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
 interface RegistrationLinkItem {
   id: string;
@@ -56,7 +57,7 @@ export function Inscricoes() {
               <article key={item.id} className="bg-white rounded-2xl border border-amber-100 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300">
                 {item.imageUrl ? (
                   <img
-                    src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:3000${item.imageUrl}`}
+                    src={resolveAssetUrl(item.imageUrl)}
                     alt={item.title}
                     className="w-full h-52 object-cover"
                   />

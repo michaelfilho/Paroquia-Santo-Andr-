@@ -32,11 +32,13 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/node": "^18.19.76",
     "eslint": "^8.57.0",
     "nodemon": "^3.0.1",
     "sequelize-cli": "^6.6.1"
   },
   "overrides": {
+    "@types/node": "^18.19.76",
     "glob": "^9.3.5",
     "rimraf": "^4.4.1"
   }

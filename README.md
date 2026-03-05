@@ -106,7 +106,10 @@ npm run dev
 npm run build
 npm run preview
 npm run lint
+npm run wifi
 ```
+
+`npm run wifi` inicia backend + frontend para acesso na rede local (Wi-Fi) usando o script `start-wifi.ps1`.
 
 ### Backend (`backend/`)
 

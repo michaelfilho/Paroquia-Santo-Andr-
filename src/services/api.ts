@@ -3,7 +3,7 @@
  * Gerencia todas as requisições da aplicação ao servidor Node.js
  */
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://admin.paroquiataruma.com/api');
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'https://admin.paroquiataruma.com/api');
 const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 let authToken: string | null = localStorage.getItem('authToken');

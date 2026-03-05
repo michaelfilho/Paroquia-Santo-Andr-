@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
 import { chapelsAPI, contentAPI } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://admin.paroquiataruma.com/api');
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'https://admin.paroquiataruma.com/api');
 const backendOrigin = rawApiBaseUrl.replace(/\/+$/, '').replace(/\/api$/, '');
 
 interface Chapel {
@@ -84,10 +85,7 @@ export function Map() {
   };
 
   const getImageUrl = (url?: string) => {
-    if (!url) return '';
-    if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
-    if (url.startsWith('/')) return `${backendOrigin}${url}`;
-    return `${backendOrigin}/${url.replace(/^\/+/, '')}`;
+    return resolveAssetUrl(url);
   };
 
   const getDefaultChapels = (): Chapel[] => [

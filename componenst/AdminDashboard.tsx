@@ -44,6 +44,7 @@ import {
   getAdminProfile,
   setAdminProfile
 } from '../src/services/api';
+import { resolveAssetUrl } from '../src/services/assetUrl';
 import { ImageUpload } from './ImageUpload';
 import churchBg from '../Styles/img/igreja.jpeg';
 
@@ -3884,7 +3885,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       </div>
                       {priest.imageUrl ? (
                         <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-amber-100 mb-4 shadow-sm">
-                          <img src={priest.imageUrl} alt={priest.name} className="w-full h-full object-cover" />
+                          <img src={resolveAssetUrl(priest.imageUrl)} alt={priest.name} className="w-full h-full object-cover" />
                         </div>
                       ) : (
                         <div className="w-32 h-32 mx-auto rounded-full bg-amber-50 flex items-center justify-center border-4 border-amber-100 mb-4 shadow-sm">
@@ -3925,7 +3926,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <div key={news.id} className="bg-white border-2 border-amber-100 rounded-xl p-6 flex flex-col md:flex-row gap-6 hover:shadow-lg transition-all">
                       {news.imageUrl && (
                         <div className="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 hidden sm:block">
-                          <img src={news.imageUrl} alt={news.title} className="w-full h-full object-cover" />
+                          <img src={resolveAssetUrl(news.imageUrl)} alt={news.title} className="w-full h-full object-cover" />
                         </div>
                       )}
                       <div className="flex-1">
@@ -4164,7 +4165,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <div key={item.id} className={`bg-white rounded-xl shadow-lg border-2 ${item.isActive ? 'border-amber-200' : 'border-gray-200'} overflow-hidden group hover:border-amber-300 transition-all`}>
                       <div className="w-full h-48 overflow-hidden relative">
                         <img
-                          src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:3000${item.imageUrl}`}
+                          src={resolveAssetUrl(item.imageUrl)}
                           alt={item.title || 'Carrossel'}
                           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!item.isActive ? 'grayscale opacity-70' : ''}`}
                         />
@@ -4256,7 +4257,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <div className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group">
                         {brasaoForm.imageUrl ? (
                           <>
-                            <img src={brasaoForm.imageUrl.startsWith('http') ? brasaoForm.imageUrl : `http://localhost:3000${brasaoForm.imageUrl}`} alt="Brasão" className="w-full h-full object-contain p-4" />
+                            <img src={resolveAssetUrl(brasaoForm.imageUrl)} alt="Brasão" className="w-full h-full object-contain p-4" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                               <label className="cursor-pointer bg-white text-amber-900 px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 hover:bg-amber-50 transition-colors">
                                 <Upload className="w-4 h-4" />
@@ -4271,7 +4272,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                         setUploadingPhotos(true);
                                         const formData = new FormData();
                                         formData.append('image', e.target.files[0]);
-                                        const uploadRes = await fetch('http://localhost:3000/api/upload/geral', {
+                                        const uploadRes = await fetch('/api/upload/geral', {
                                           method: 'POST',
                                           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
                                           body: formData,
@@ -4306,7 +4307,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                                     setUploadingPhotos(true);
                                     const formData = new FormData();
                                     formData.append('image', e.target.files[0]);
-                                    const uploadRes = await fetch('http://localhost:3000/api/upload/geral', {
+                                    const uploadRes = await fetch('/api/upload/geral', {
                                       method: 'POST',
                                       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
                                       body: formData,
@@ -4546,7 +4547,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 {eventPhotos.map((photo) => (
                   <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-amber-500 transition-all">
                     <img
-                      src={`http://localhost:3000${photo.path}`}
+                      src={resolveAssetUrl(photo.path)}
                       alt="Foto do evento"
                       className="w-full h-full object-cover"
                     />
