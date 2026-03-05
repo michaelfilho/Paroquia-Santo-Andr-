@@ -21,6 +21,8 @@ import { Dizimo } from './componenst/Dizimo';
 import { Noticias } from './componenst/Noticias';
 import { Contato } from './componenst/Contato';
 import { candlesAPI, siteVisitsAPI } from './src/services/api';
+import { DailyLiturgyCard } from './componenst/DailyLiturgy';
+import { fetchDailyLiturgy, getThemeFromLiturgicalColor, type DailyLiturgy, type LiturgicalTheme } from './src/services/liturgy';
 
 export type PageType = 'home' | 'inscricoes' | 'guias' | 'admin-login' | 'admin-dashboard' | 'movimentos' | 'brasao' | 'historia-completa' | 'antigos-padres' | 'pedidos-oracao' | 'dizimo' | 'noticias' | 'contato';
 
@@ -120,6 +122,10 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [litCandlesCount, setLitCandlesCount] = useState(0);
+  const [dailyLiturgy, setDailyLiturgy] = useState<DailyLiturgy | null>(null);
+  const [liturgyLoading, setLiturgyLoading] = useState(true);
+  const [liturgyError, setLiturgyError] = useState<string | null>(null);
+  const [liturgicalTheme, setLiturgicalTheme] = useState<LiturgicalTheme>(getThemeFromLiturgicalColor('verde'));
 
   useEffect(() => {
     const initialPage = getPageFromPath(window.location.pathname);
@@ -174,6 +180,75 @@ export default function App() {
 
     registerVisit();
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    let midnightTimer: number | undefined;
+    let periodicTimer: number | undefined;
+
+    const loadDailyLiturgy = async (showLoading = false) => {
+      try {
+        if (showLoading) setLiturgyLoading(true);
+        const data = await fetchDailyLiturgy();
+        if (!mounted) return;
+        setDailyLiturgy(data);
+        setLiturgicalTheme(getThemeFromLiturgicalColor(data.liturgicalColor));
+        setLiturgyError(null);
+      } catch (error) {
+        if (!mounted) return;
+        console.error('Erro ao carregar liturgia diaria:', error);
+        setLiturgyError('Nao foi possivel carregar a liturgia diaria agora.');
+      } finally {
+        if (mounted && showLoading) setLiturgyLoading(false);
+      }
+    };
+
+    const getMsUntilNextMidnight = () => {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 5, 0);
+      return Math.max(60_000, next.getTime() - now.getTime());
+    };
+
+    const scheduleMidnightRefresh = () => {
+      if (midnightTimer) window.clearTimeout(midnightTimer);
+      midnightTimer = window.setTimeout(async () => {
+        await loadDailyLiturgy(false);
+        scheduleMidnightRefresh();
+      }, getMsUntilNextMidnight());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadDailyLiturgy(false);
+      }
+    };
+
+    loadDailyLiturgy(true);
+    scheduleMidnightRefresh();
+    periodicTimer = window.setInterval(() => loadDailyLiturgy(false), 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      mounted = false;
+      if (midnightTimer) window.clearTimeout(midnightTimer);
+      if (periodicTimer) window.clearInterval(periodicTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const body = document.body;
+    body.classList.add('liturgical-theme-active');
+    body.style.setProperty('--liturgical-main', liturgicalTheme.main);
+    body.style.setProperty('--liturgical-soft', liturgicalTheme.soft);
+
+    return () => {
+      body.classList.remove('liturgical-theme-active');
+      body.style.removeProperty('--liturgical-main');
+      body.style.removeProperty('--liturgical-soft');
+    };
+  }, [liturgicalTheme]);
 
   const handleCandleLit = () => {
     setLitCandlesCount(prev => prev + 1);
@@ -256,6 +331,12 @@ export default function App() {
       <Header onNavigate={handleNavigate} currentPage={currentPage} />
       <main>
         <Hero />
+        <DailyLiturgyCard
+          liturgy={dailyLiturgy}
+          isLoading={liturgyLoading}
+          error={liturgyError}
+          theme={liturgicalTheme}
+        />
         <About litCandlesCount={litCandlesCount} />
         <Clergy />
         <FutureEvents />

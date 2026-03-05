@@ -19,6 +19,7 @@ const formerPriestsRoutes = require('./routes/formerpriests');
 const newsRoutes = require('./routes/news');
 const carouselRoutes = require('./routes/carousel');
 const registrationLinksRoutes = require('./routes/registration-links');
+const liturgyRoutes = require('./routes/liturgy');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
@@ -191,6 +192,7 @@ app.use('/api/public/movements', movementsRoutes);
 app.use('/api/public/former-priests', formerPriestsRoutes);
 app.use('/api/public/news', newsRoutes);
 app.use('/api/public/carousel', carouselRoutes);
+app.use('/api/public/liturgy', liturgyRoutes);
 app.get('/api/public/registration-links', async (req, res) => {
   try {
     const { RegistrationLink } = require('./models');

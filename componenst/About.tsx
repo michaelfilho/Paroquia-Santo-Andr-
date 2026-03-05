@@ -69,13 +69,8 @@ export function About({ litCandlesCount = 0 }: AboutProps) {
 
   return (
     <section id="sobre" className="py-24 bg-white relative overflow-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl -z-0" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-300/10 rounded-full blur-3xl -z-0" />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section Header */}
-        <div className="text-center mb-20">
+          <div className="text-center mb-20">
           <div className="inline-block mb-4">
             <span className="text-amber-600 font-semibold text-sm tracking-widest uppercase">
               Nossa História

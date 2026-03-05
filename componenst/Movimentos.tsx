@@ -60,11 +60,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
             <Header onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-28 pb-20 overflow-hidden relative">
-                {/* Background ornaments */}
-                <div className="absolute top-40 left-0 w-72 h-72 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-                <div className="absolute top-60 right-0 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-40 w-72 h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-
+                
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     {/* Header Section */}
                     <div className="text-center mb-16 animate-fade-in-up">
@@ -93,8 +89,6 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                                     key={mov.id}
                                     className="group bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-2xl hover:shadow-amber-100/50 transition-all duration-300 border border-amber-50 hover:-translate-y-2 flex flex-col h-full relative overflow-hidden"
                                 >
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-50 to-white rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500 ease-in-out" />
-
                                     <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:-rotate-6 transform overflow-hidden">
                                         {renderIcon(mov)}
                                     </div>

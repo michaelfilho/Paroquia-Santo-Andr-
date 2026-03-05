@@ -1320,7 +1320,7 @@ const CarouselFormModal = ({
         )}
         <div>
           <label className="text-sm font-medium text-amber-900 block mb-1">
-            {isPrimarySlide ? 'Imagem para Notebook e Desktop ' : 'Imagem para Notebook e Desktop'}
+            {isPrimarySlide ? 'Imagem para Notebook e Desktop 16:9 ' : 'Imagem para Notebook e Desktop 16:9'}
           </label>
           <input
             type="text"
@@ -1332,7 +1332,7 @@ const CarouselFormModal = ({
           <ImageUpload onImageUrlChange={onImageUrlChange} currentImageUrl={carouselForm.imageUrl} />
         </div>
         <div>
-          <label className="text-sm font-medium text-amber-900 block mb-1">Imagem para Celular</label>
+          <label className="text-sm font-medium text-amber-900 block mb-1">Imagem para Celular 9:16</label>
           <input
             type="text"
             placeholder="URL da imagem mobile (se vazio, usa imagem principal)"
