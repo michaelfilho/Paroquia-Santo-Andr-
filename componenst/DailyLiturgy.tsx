@@ -40,6 +40,46 @@ const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const removeDuplicateBoldPsalmReference = (html: string, reference?: string) => {
+  if (!html || !reference) return html;
+
+  const normalizedReference = reference.trim();
+  if (!normalizedReference) return html;
+
+  const referencePattern = escapeRegex(normalizedReference).replace(/\s+/g, '\\s+');
+
+  const boldParagraphPattern = new RegExp(
+    `<p>\\s*<(?:strong|b)>\\s*${referencePattern}\\s*<\\/(?:strong|b)>\\s*<\\/p>`,
+    'i',
+  );
+
+  if (boldParagraphPattern.test(html)) {
+    return html.replace(boldParagraphPattern, '').trim();
+  }
+
+  const inlineBoldPattern = new RegExp(`<(?:strong|b)>\\s*${referencePattern}\\s*<\\/(?:strong|b)>`, 'i');
+  return html.replace(inlineBoldPattern, '').trim();
+};
+
+const cleanupGospelHtml = (html: string) => {
+  if (!html) return html;
+
+  return html
+    .replace(
+      /^(?:\s|<br\s*\/?>)*(?:<p>)\s*<(?:strong|b)>\s*Evangelho[\s\S]*?<\/(?:strong|b)>\s*<\/p>/i,
+      '',
+    )
+    .replace(/^(?:\s|<br\s*\/?>)*(?:<h[1-6][^>]*>)\s*Evangelho[\s\S]*?<\/h[1-6]>/i, '')
+    .replace(/^(?:\s|<br\s*\/?>)*(?:<(?:strong|b)>)\s*Evangelho[\s\S]*?<\/(?:strong|b)>/i, '')
+    .replace(
+      /^(?:\s|<br\s*\/?>)*(?:<p>)\s*(?:<(?:em|i)>)?\s*["“][\s\S]*?["”]\s*(?:<\/(?:em|i)>)?\s*<\/p>/i,
+      '',
+    )
+    .trim();
+};
+
 export function DailyLiturgyCard({ liturgy, isLoading, error, theme }: DailyLiturgyProps) {
   const [activeTab, setActiveTab] = useState<'first' | 'psalm' | 'gospel'>('first');
 
@@ -77,6 +117,20 @@ export function DailyLiturgyCard({ liturgy, isLoading, error, theme }: DailyLitu
       html: liturgy.readings.gospel.html || '',
     };
   }, [activeTab, liturgy]);
+
+  const renderedHtml = useMemo(() => {
+    if (!tabData?.html) return '';
+
+    if (activeTab === 'psalm') {
+      return removeDuplicateBoldPsalmReference(tabData.html, tabData.reference);
+    }
+
+    if (activeTab === 'gospel') {
+      return cleanupGospelHtml(tabData.html);
+    }
+
+    return tabData.html;
+  }, [activeTab, tabData?.html, tabData?.reference]);
 
   return (
     <section id="liturgia-diaria" className="py-14 px-4 bg-transparent">
@@ -153,23 +207,14 @@ export function DailyLiturgyCard({ liturgy, isLoading, error, theme }: DailyLitu
                   {tabData?.tabTitle}
                 </p>
 
-                <h3 className="text-2xl font-bold text-slate-800 leading-snug">
-                  {tabData?.title}
-                  {tabData?.reference ? ` (${tabData.reference})` : ''}
-                </h3>
-
-                {activeTab === 'gospel' && liturgy.quote && (
-                  <p className="mt-4 italic text-lg text-slate-700">"{liturgy.quote}"</p>
+                {activeTab === 'gospel' && tabData?.reference && (
+                  <p className="text-2xl font-bold text-slate-700">Evangelho ({tabData.reference})</p>
                 )}
 
-                {activeTab === 'psalm' && tabData?.subline && (
-                  <p className="mt-4 italic text-lg text-slate-700">{tabData.subline}</p>
-                )}
-
-                {tabData?.html ? (
+                {renderedHtml ? (
                   <div
                     className="mt-5 cn-reading-content"
-                    dangerouslySetInnerHTML={{ __html: tabData.html }}
+                    dangerouslySetInnerHTML={{ __html: renderedHtml }}
                   />
                 ) : (
                   <p className="mt-5 text-[1.15rem] leading-10 text-slate-700 whitespace-pre-line text-justify">
