@@ -11,6 +11,7 @@ interface PastoralMovement {
     description: string;
     iconUrl: string;
     meetings: string;
+    coordinator?: string;
 }
 
 interface Props {
@@ -97,6 +98,13 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                                     <p className="relative z-10 text-gray-600 leading-relaxed mb-8 flex-grow">
                                         {mov.description}
                                     </p>
+
+                                    {mov.coordinator && (
+                                        <div className="relative z-10 mb-5 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
+                                            <p className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-1">Coordenador</p>
+                                            <p className="text-sm font-semibold text-amber-900">{mov.coordinator}</p>
+                                        </div>
+                                    )}
 
                                     <div className="relative z-10 pt-5 border-t border-gray-100 mt-auto bg-gray-50/50 -mx-8 -mb-8 p-8 flex items-center gap-3">
                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

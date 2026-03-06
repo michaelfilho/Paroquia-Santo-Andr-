@@ -1,5 +1,5 @@
 param(
-  [string]$HostIp = "175.105.1.93",
+  [string]$HostIp = "192.168.1.221",
   [int]$FrontendPort = 5173,
   [int]$BackendPort = 3000
 )

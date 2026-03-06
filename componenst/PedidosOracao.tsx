@@ -46,8 +46,32 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
             <Header onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-32 pb-24 relative overflow-hidden min-h-[90vh] flex flex-col items-center justify-center">
+                {/* Base atmosphere behind the candle area */}
+                <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                        backgroundImage: `
+                            radial-gradient(circle at 50% 35%, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.04) 26%, transparent 55%),
+                            linear-gradient(180deg, rgba(255, 251, 235, 0.6) 0%, rgba(248, 250, 252, 0.2) 45%, rgba(241, 245, 249, 0.6) 100%)
+                        `
+                    }}
+                />
+
                 {/* Glow Effects Background */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full filter blur-[100px] transition-all duration-1000 ease-in-out mix-blend-multiply pointer-events-none ${isLit ? 'bg-amber-300/40 scale-100 opacity-100' : 'bg-transparent scale-50 opacity-0'}`} />
+                <div
+                    className={`hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full transition-all duration-1000 ease-in-out pointer-events-none will-change-transform ${isLit ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                    style={{
+                        backgroundImage: 'radial-gradient(circle, rgba(252, 211, 77, 0.28) 0%, rgba(252, 211, 77, 0.1) 35%, rgba(252, 211, 77, 0.03) 55%, transparent 72%)'
+                    }}
+                />
+                <div
+                    className={`hidden md:block absolute top-[56%] left-1/2 -translate-x-1/2 w-[34rem] h-[18rem] rounded-full pointer-events-none transition-all duration-1000 will-change-transform ${isLit ? 'opacity-100 scale-100' : 'opacity-70 scale-95'}`}
+                    style={{
+                        backgroundImage: isLit
+                            ? 'radial-gradient(ellipse, rgba(251, 146, 60, 0.22) 0%, rgba(251, 146, 60, 0.1) 45%, transparent 78%)'
+                            : 'radial-gradient(ellipse, rgba(148, 163, 184, 0.2) 0%, rgba(148, 163, 184, 0.08) 45%, transparent 78%)'
+                    }}
+                />
 
                 <div className="max-w-4xl mx-auto px-4 w-full relative z-10 text-center">
 
@@ -67,7 +91,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
 
                         {/* Candle Graphic */}
                         <div
-                            className={`relative cursor-pointer group flex flex-col items-center transition-transform duration-300 ${!isLit && !showOptions ? 'hover:scale-105' : ''}`}
+                            className={`relative cursor-pointer group flex flex-col items-center transition-transform duration-300 touch-manipulation ${!isLit && !showOptions ? 'md:hover:scale-105' : ''}`}
                             onClick={() => !isLit && !showOptions && setShowOptions(true)}
                         >
 
@@ -76,7 +100,30 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
                                 {/* Corpo principal da Gruta (Cavidade em Arco) */}
                                 <div className={`w-[85%] h-full rounded-t-[140px] rounded-b-[30px] transition-all duration-1000 overflow-hidden relative z-10 
                                                 border-[16px] border-l-stone-600/80 border-r-stone-700/90 border-t-stone-500/80 border-b-stone-800
-                                                ring-8 ring-stone-900/60 ring-inset shadow-2xl ${isLit ? 'bg-stone-800 shadow-[0_20px_80px_rgba(217,119,6,0.25)]' : 'bg-stone-900 shadow-inner'}`}>
+                                                ring-8 ring-stone-900/60 ring-inset shadow-2xl ${isLit ? 'bg-stone-800 md:shadow-[0_20px_80px_rgba(217,119,6,0.25)] shadow-[0_6px_18px_rgba(0,0,0,0.25)]' : 'bg-stone-900 shadow-inner'}`}>
+
+                                    {/* Fundo profundo do nicho com variação tonal */}
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{
+                                            backgroundImage: `
+                                                radial-gradient(ellipse at 50% 14%, rgba(214, 211, 209, 0.24) 0%, rgba(87, 83, 78, 0.2) 18%, rgba(28, 25, 23, 0.85) 60%, rgba(12, 10, 9, 0.95) 100%),
+                                                linear-gradient(180deg, rgba(41, 37, 36, 0.65) 0%, rgba(17, 24, 39, 0.4) 40%, rgba(2, 6, 23, 0.78) 100%)
+                                            `
+                                        }}
+                                    />
+
+                                    {/* Feixes suaves para destacar a vela e o centro da gruta */}
+                                    <div
+                                        className={`absolute inset-0 transition-all duration-1000 ${isLit ? 'opacity-100' : 'opacity-45'}`}
+                                        style={{
+                                            backgroundImage: `
+                                                radial-gradient(ellipse at 50% 72%, rgba(245, 158, 11, 0.24) 0%, rgba(245, 158, 11, 0.07) 32%, transparent 68%),
+                                                linear-gradient(120deg, transparent 35%, rgba(251, 191, 36, 0.08) 48%, transparent 60%),
+                                                linear-gradient(60deg, transparent 30%, rgba(255, 237, 213, 0.06) 52%, transparent 72%)
+                                            `
+                                        }}
+                                    />
 
                                     {/* Textura de Pedra Natural Realista */}
                                     <div
@@ -96,7 +143,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
 
                                     {/* SVG Noise / Textura Rochosa e Rachaduras */}
                                     <div
-                                        className="absolute inset-0 mix-blend-overlay opacity-60"
+                                        className="hidden md:block absolute inset-0 mix-blend-overlay opacity-60"
                                         style={{
                                             backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
                                         }}
@@ -104,7 +151,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
 
                                     {/* Manchas de Musgo (Remete a grutas antigas) */}
                                     <div
-                                        className="absolute inset-0 opacity-40 mix-blend-multiply"
+                                        className="hidden md:block absolute inset-0 opacity-40 mix-blend-multiply"
                                         style={{
                                             backgroundImage: `
                                                 radial-gradient(ellipse at 15% 20%, rgba(34,139,34,0.35) 0%, transparent 25%),
@@ -115,7 +162,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
                                     />
 
                                     {/* Cruz Sagrada no fundo da gruta */}
-                                    <div className={`absolute top-[12%] left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ${isLit ? 'opacity-90 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)]' : 'opacity-40 drop-shadow-md'}`}>
+                                    <div className={`absolute top-[12%] left-1/2 -translate-x-1/2 flex flex-col items-center transition-all duration-1000 ${isLit ? 'opacity-90 md:drop-shadow-[0_0_20px_rgba(251,191,36,0.6)] drop-shadow-sm' : 'opacity-40 drop-shadow-sm'}`}>
                                         <div className="w-2.5 h-24 bg-gradient-to-b from-amber-700 via-amber-800 to-amber-950 rounded-sm shadow-[inset_1px_1px_2px_rgba(255,255,255,0.2),_2px_2px_8px_rgba(0,0,0,0.8)]" />
                                         <div className="absolute top-6 w-16 h-2.5 bg-gradient-to-r from-amber-700 via-amber-800 to-amber-950 rounded-sm shadow-[inset_1px_1px_2px_rgba(255,255,255,0.2),_2px_2px_8px_rgba(0,0,0,0.8)]" />
                                         {/* Detalhe Dourado no Centro da Cruz */}
@@ -123,17 +170,36 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
                                     </div>
 
                                     {/* Aprofundamento / Sombramento da Caverna */}
-                                    <div className="absolute inset-0 shadow-[inset_0_120px_100px_rgba(0,0,0,0.95)] pointer-events-none" />
-                                    <div className="absolute inset-0 shadow-[inset_0_-50px_80px_rgba(0,0,0,0.8)] pointer-events-none" />
+                                    <div className="absolute inset-0 md:shadow-[inset_0_120px_100px_rgba(0,0,0,0.95)] shadow-[inset_0_60px_50px_rgba(0,0,0,0.9)] pointer-events-none" />
+                                    <div className="absolute inset-0 md:shadow-[inset_0_-50px_80px_rgba(0,0,0,0.8)] shadow-[inset_0_-24px_40px_rgba(0,0,0,0.65)] pointer-events-none" />
 
                                     {/* Destaque escuro nas laterais internas para gerar o aspecto 3D do Côncavo */}
-                                    <div className="absolute top-0 bottom-0 left-0 w-20 bg-gradient-to-r from-black/95 via-stone-900/70 to-transparent pointer-events-none" />
-                                    <div className="absolute top-0 bottom-0 right-0 w-20 bg-gradient-to-l from-black/95 via-stone-900/70 to-transparent pointer-events-none" />
+                                    <div className="hidden md:block absolute top-0 bottom-0 left-0 w-20 bg-gradient-to-r from-black/95 via-stone-900/70 to-transparent pointer-events-none" />
+                                    <div className="hidden md:block absolute top-0 bottom-0 right-0 w-20 bg-gradient-to-l from-black/95 via-stone-900/70 to-transparent pointer-events-none" />
 
                                     {/* Iluminação refletida na imagem da gruta quando a vela está acesa */}
-                                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-[28rem] rounded-t-full transition-all duration-1000 mix-blend-screen ${isLit ? 'bg-gradient-to-t from-amber-500/30 via-amber-400/10 to-transparent blur-[50px] opacity-100' : 'opacity-0'}`} />
-                                    {isLit && <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/20 rounded-full blur-[60px]" />}
-                                    {isLit && <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-40 h-40 bg-orange-400/25 rounded-full blur-[40px]" />}
+                                    <div
+                                        className={`hidden md:block absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-[28rem] rounded-t-full transition-all duration-1000 ${isLit ? 'opacity-100' : 'opacity-0'}`}
+                                        style={{
+                                            backgroundImage: 'radial-gradient(ellipse at 50% 100%, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.12) 35%, rgba(245, 158, 11, 0.04) 60%, transparent 78%)'
+                                        }}
+                                    />
+                                    {isLit && (
+                                        <div
+                                            className="hidden md:block absolute top-[20%] left-1/2 -translate-x-1/2 w-48 h-48 rounded-full"
+                                            style={{
+                                                backgroundImage: 'radial-gradient(circle, rgba(251, 191, 36, 0.24) 0%, rgba(251, 191, 36, 0.08) 45%, transparent 70%)'
+                                            }}
+                                        />
+                                    )}
+                                    {isLit && (
+                                        <div
+                                            className="hidden md:block absolute bottom-[20%] left-1/2 -translate-x-1/2 w-40 h-40 rounded-full"
+                                            style={{
+                                                backgroundImage: 'radial-gradient(circle, rgba(251, 146, 60, 0.25) 0%, rgba(251, 146, 60, 0.09) 45%, transparent 72%)'
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </div>
 
