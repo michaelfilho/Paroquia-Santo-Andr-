@@ -7,7 +7,7 @@ interface HeaderProps {
   currentPage?: string;
 }
 
-export function Header({ onNavigate, currentPage = 'home' }: HeaderProps) {
+export function Cabecalho({ onNavigate, currentPage = 'home' }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);

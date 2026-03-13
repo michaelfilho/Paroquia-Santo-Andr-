@@ -6,7 +6,7 @@ interface FooterProps {
   onAdminClick?: () => void;
 }
 
-export function Footer({ onAdminClick }: FooterProps) {
+export function Rodape({ onAdminClick }: FooterProps) {
   const [config, setConfig] = useState({
     parishName: 'Paróquia Santo André',
     cityState: 'Tarumã - SP',

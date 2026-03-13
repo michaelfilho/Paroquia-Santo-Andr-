@@ -7,7 +7,7 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
-export function AdminLogin({
+export function LoginAdmin({
   onLogin,
   onBack,
 }: AdminLoginProps) {

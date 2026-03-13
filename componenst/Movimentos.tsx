@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { Cabecalho } from './Cabecalho';
+import { Rodape } from './Rodape';
 import { Users, BookOpen, Heart, Music, Flame, HandHeart, ImageIcon, MessageCircle } from 'lucide-react';
 import { movementsAPI } from '../src/services/api';
 import { resolveAssetUrl } from '../src/services/assetUrl';
@@ -58,7 +58,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans selection:bg-amber-200">
-            <Header onNavigate={onNavigate} currentPage={currentPage} />
+            <Cabecalho onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-28 pb-20 overflow-hidden relative">
                 
@@ -140,7 +140,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                 </div>
             </main>
 
-            <Footer onAdminClick={onAdminClick} />
+            <Rodape onAdminClick={onAdminClick} />
         </div>
     );
 }

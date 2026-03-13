@@ -45,7 +45,7 @@ import {
   setAdminProfile
 } from '../src/services/api';
 import { resolveAssetUrl } from '../src/services/assetUrl';
-import { ImageUpload } from './ImageUpload';
+import { ImageUpload } from './CarregamentoImagem';
 import churchBg from '../Styles/img/igreja.jpeg';
 
 interface AdminDashboardProps {
@@ -1452,7 +1452,7 @@ const CarouselFormModal = ({
   </div>
 );
 
-export function AdminDashboard({ onLogout }: AdminDashboardProps) {
+export function PainelAdmin({ onLogout }: AdminDashboardProps) {
   type ProgramSource = 'schedule' | 'event';
   const [activeTab, setActiveTab] = useState<TabType>('eventos');
   const [showEventForm, setShowEventForm] = useState(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { Cabecalho } from './Cabecalho';
+import { Rodape } from './Rodape';
 import { MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react';
 
 interface Props {
@@ -32,7 +32,7 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50/30 font-sans selection:bg-amber-200 flex flex-col">
-            <Header onNavigate={onNavigate} currentPage={currentPage} />
+            <Cabecalho onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-32 pb-24 flex-1">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,7 +158,7 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
                 </div>
             </main>
 
-            <Footer onAdminClick={onAdminClick} />
+            <Rodape onAdminClick={onAdminClick} />
         </div>
     );
 }

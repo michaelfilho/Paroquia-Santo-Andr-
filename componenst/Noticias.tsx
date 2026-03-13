@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { Cabecalho } from './Cabecalho';
+import { Rodape } from './Rodape';
 import { Calendar, ChevronRight, ImageIcon } from 'lucide-react';
 import { ImageWithFallback } from './figma/image';
 import { newsAPI } from '../src/services/api';
@@ -55,7 +55,7 @@ export function Noticias({ onNavigate, currentPage, onAdminClick }: Props) {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans selection:bg-amber-200">
-            <Header onNavigate={onNavigate} currentPage={currentPage} />
+            <Cabecalho onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-32 pb-24">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -185,7 +185,7 @@ export function Noticias({ onNavigate, currentPage, onAdminClick }: Props) {
                 </div>
             </main>
 
-            <Footer onAdminClick={onAdminClick} />
+            <Rodape onAdminClick={onAdminClick} />
         </div>
     );
 }

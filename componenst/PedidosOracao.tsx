@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { Cabecalho } from './Cabecalho';
+import { Rodape } from './Rodape';
 import { Flame, Heart } from 'lucide-react';
 import { prayerRequestsAPI } from '../src/services/api';
 
@@ -43,7 +43,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans selection:bg-amber-200">
-            <Header onNavigate={onNavigate} currentPage={currentPage} />
+            <Cabecalho onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-32 pb-24 relative overflow-hidden min-h-[90vh] flex flex-col items-center justify-center">
                 {/* Base atmosphere behind the candle area */}
@@ -292,7 +292,7 @@ export function PedidosOracao({ onNavigate, currentPage, onAdminClick, onCandleL
                 </div>
             </main>
 
-            <Footer onAdminClick={onAdminClick} />
+            <Rodape onAdminClick={onAdminClick} />
         </div>
     );
 }

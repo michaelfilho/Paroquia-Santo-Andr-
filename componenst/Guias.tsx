@@ -10,7 +10,7 @@ interface Guide {
   details: string[];
 }
 
-export function Guides() {
+export function Guias() {
   const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
 

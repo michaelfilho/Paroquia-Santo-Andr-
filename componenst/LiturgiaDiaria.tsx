@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BookOpenText } from 'lucide-react';
-import type { DailyLiturgy, LiturgicalTheme } from '../src/services/liturgy';
+import type { DailyLiturgy, LiturgicalTheme } from '../src/services/liturgia';
 
 interface DailyLiturgyProps {
   liturgy: DailyLiturgy | null;
@@ -80,7 +80,7 @@ const cleanupGospelHtml = (html: string) => {
     .trim();
 };
 
-export function DailyLiturgyCard({ liturgy, isLoading, error, theme }: DailyLiturgyProps) {
+export function LiturgiaDiariaCard({ liturgy, isLoading, error, theme }: DailyLiturgyProps) {
   const [activeTab, setActiveTab] = useState<'first' | 'psalm' | 'gospel'>('first');
 
   const tabData = useMemo(() => {

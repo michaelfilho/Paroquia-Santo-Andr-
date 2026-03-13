@@ -16,7 +16,7 @@ interface FutureEvent {
   confirmedInscriptions?: number;
 }
 
-export function FutureEvents() {
+export function EventosFuturos() {
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [events, setEvents] = useState<FutureEvent[]>([]);
 

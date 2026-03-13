@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { Cabecalho } from './Cabecalho';
+import { Rodape } from './Rodape';
 import { Church, Clock, CalendarHeart, Cross, Plus } from 'lucide-react';
 import churchBg from '../Styles/img/igreja.jpeg';
 import { ImageWithFallback } from './figma/image';
@@ -109,7 +109,7 @@ export function HistoriaCompleta({ onNavigate, currentPage, onAdminClick }: Prop
 
     return (
         <div className="min-h-screen bg-white font-sans selection:bg-amber-200">
-            <Header onNavigate={onNavigate} currentPage={currentPage} />
+            <Cabecalho onNavigate={onNavigate} currentPage={currentPage} />
 
             <main className="pt-20 pb-24">
                 {/* Hero História */}
@@ -165,7 +165,7 @@ export function HistoriaCompleta({ onNavigate, currentPage, onAdminClick }: Prop
                 </div>
             </main>
 
-            <Footer onAdminClick={onAdminClick} />
+            <Rodape onAdminClick={onAdminClick} />
         </div>
     );
 }

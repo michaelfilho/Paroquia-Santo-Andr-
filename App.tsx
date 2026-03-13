@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Header } from './componenst/Header';
+import { Cabecalho } from './componenst/Cabecalho';
 import { Hero } from './componenst/Hero';
-import { About } from './componenst/About';
-import { Clergy } from './componenst/Clergy';
-import { Guides } from './componenst/Guides';
-import { Map } from './componenst/Map';
-import { PastEvents } from './componenst/PastEvents';
-import { FutureEvents } from './componenst/FutureEvents';
-import { Footer } from './componenst/Footer';
-import { EventGallery } from './componenst/EventGallery';
-import { Inscricoes } from './componenst/Inscrições';
-import { AdminLogin } from './componenst/adminLogin';
-import { AdminDashboard } from './componenst/AdminDashboard';
+import { Sobre } from './componenst/Sobre';
+import { Clero } from './componenst/Clero';
+import { Guias } from './componenst/Guias';
+import { Mapa } from './componenst/Mapa';
+import { EventosPassados } from './componenst/EventosPassados';
+import { EventosFuturos } from './componenst/EventosFuturos';
+import { Rodape } from './componenst/Rodape';
+import { GaleriaEventos } from './componenst/GaleriaEventos';
+import { Inscricoes } from './componenst/Inscricoes';
+import { LoginAdmin } from './componenst/LoginAdmin';
+import { PainelAdmin } from './componenst/PainelAdmin';
 import { Movimentos } from './componenst/Movimentos';
 import { Brasao } from './componenst/Brasao';
 import { HistoriaCompleta } from './componenst/HistoriaCompleta';
@@ -21,8 +21,8 @@ import { Dizimo } from './componenst/Dizimo';
 import { Noticias } from './componenst/Noticias';
 import { Contato } from './componenst/Contato';
 import { candlesAPI, siteVisitsAPI } from './src/services/api';
-import { DailyLiturgyCard } from './componenst/DailyLiturgy';
-import { fetchDailyLiturgy, getThemeFromLiturgicalColor, type DailyLiturgy, type LiturgicalTheme } from './src/services/liturgy';
+import { LiturgiaDiariaCard } from './componenst/LiturgiaDiaria';
+import { fetchDailyLiturgy, getThemeFromLiturgicalColor, type DailyLiturgy, type LiturgicalTheme } from './src/services/liturgia';
 
 export type PageType = 'home' | 'inscricoes' | 'guias' | 'admin-login' | 'admin-dashboard' | 'movimentos' | 'brasao' | 'historia-completa' | 'antigos-padres' | 'pedidos-oracao' | 'dizimo' | 'noticias' | 'contato';
 
@@ -281,13 +281,13 @@ export default function App() {
 
   // Render Admin Login
   if (currentPage === 'admin-login') {
-    return <AdminLogin onLogin={handleLogin} onBack={handleBackToHome} />;
+    return <LoginAdmin onLogin={handleLogin} onBack={handleBackToHome} />;
   }
 
   // Render Admin Dashboard
   if (currentPage === 'admin-dashboard' && isAuthenticated) {
     return (
-      <AdminDashboard onLogout={handleLogout} />
+      <PainelAdmin onLogout={handleLogout} />
     );
   }
 
@@ -305,11 +305,11 @@ export default function App() {
   if (currentPage === 'guias') {
     return (
       <div className="min-h-screen bg-white">
-        <Header onNavigate={handleNavigate} currentPage={currentPage} />
+        <Cabecalho onNavigate={handleNavigate} currentPage={currentPage} />
         <div style={{ paddingTop: '80px' }}>
-          <Guides />
+          <Guias />
         </div>
-        <Footer onAdminClick={handleAdminClick} />
+        <Rodape onAdminClick={handleAdminClick} />
       </div>
     );
   }
@@ -318,9 +318,9 @@ export default function App() {
   if (currentPage === 'inscricoes') {
     return (
       <div className="min-h-screen bg-white">
-        <Header onNavigate={handleNavigate} currentPage={currentPage} />
+        <Cabecalho onNavigate={handleNavigate} currentPage={currentPage} />
         <Inscricoes />
-        <Footer onAdminClick={handleAdminClick} />
+        <Rodape onAdminClick={handleAdminClick} />
       </div>
     );
   }
@@ -328,25 +328,25 @@ export default function App() {
   // Render Home Page (default)
   return (
     <div className="min-h-screen bg-white">
-      <Header onNavigate={handleNavigate} currentPage={currentPage} />
+      <Cabecalho onNavigate={handleNavigate} currentPage={currentPage} />
       <main>
         <Hero />
-        <DailyLiturgyCard
+        <LiturgiaDiariaCard
           liturgy={dailyLiturgy}
           isLoading={liturgyLoading}
           error={liturgyError}
           theme={liturgicalTheme}
         />
-        <About litCandlesCount={litCandlesCount} />
-        <Clergy />
-        <FutureEvents />
-        <PastEvents onViewPhotos={setSelectedEvent} />
-        <Map />
+        <Sobre litCandlesCount={litCandlesCount} />
+        <Clero />
+        <EventosFuturos />
+        <EventosPassados onViewPhotos={setSelectedEvent} />
+        <Mapa />
       </main>
-      <Footer onAdminClick={handleAdminClick} />
+      <Rodape onAdminClick={handleAdminClick} />
 
       {selectedEvent !== null && (
-        <EventGallery
+        <GaleriaEventos
           eventId={String(selectedEvent)}
           onClose={() => setSelectedEvent(null)}
         />

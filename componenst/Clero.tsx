@@ -15,7 +15,7 @@ interface ClergyMember {
   current: boolean;
 }
 
-export function Clergy() {
+export function Clero() {
   const [clergyMembers, setClergyMembers] = useState<ClergyMember[]>([]);
   const [loading, setLoading] = useState(true);
 

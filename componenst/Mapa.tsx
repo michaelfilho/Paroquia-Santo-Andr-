@@ -31,7 +31,7 @@ const defaultMainCard = {
   routeLabel: 'Ver rota no Google Maps',
 };
 
-export function Map() {
+export function Mapa() {
   const [chapels, setChapels] = useState<Chapel[]>([]);
   const [mainCard, setMainCard] = useState(defaultMainCard);
 

@@ -14,7 +14,7 @@ interface Photo {
   path: string;
 }
 
-export function EventGallery({ eventId, onClose }: EventGalleryProps) {
+export function GaleriaEventos({ eventId, onClose }: EventGalleryProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
 

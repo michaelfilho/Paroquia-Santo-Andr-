@@ -21,7 +21,7 @@ interface PastEventsProps {
   onViewPhotos: (eventId: string | number) => void;
 }
 
-export function PastEvents({ onViewPhotos }: PastEventsProps) {
+export function EventosPassados({ onViewPhotos }: PastEventsProps) {
   const [openYear, setOpenYear] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
 

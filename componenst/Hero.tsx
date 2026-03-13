@@ -211,7 +211,7 @@ export function Hero() {
                 src={resolvedImage}
                 fallbackSrc={churchBg}
                 alt="Slide Background"
-                className="w-full h-full object-cover object-[50%_80%] scale-100"
+                className="w-full h-full object-cover object-[50%_52%] scale-100"
               />
               {/* Overlay */}
               <div className={`absolute inset-0 bg-gradient-to-b ${slide.overlayColor || 'from-black/70 via-black/50 to-black/70'}`} />

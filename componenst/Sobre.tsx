@@ -6,7 +6,7 @@ interface AboutProps {
   litCandlesCount?: number;
 }
 
-export function About({ litCandlesCount = 0 }: AboutProps) {
+export function Sobre({ litCandlesCount = 0 }: AboutProps) {
   const [historyText, setHistoryText] = useState('');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
