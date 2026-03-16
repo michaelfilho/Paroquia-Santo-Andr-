@@ -12,7 +12,7 @@ const ClergyMember = sequelize.define('ClergyMember', {
     allowNull: false
   },
   role: {
-    type: DataTypes.ENUM('Pároco', 'Vigário Paroquial', 'Administrador', 'Frei'),
+    type: DataTypes.ENUM('Pároco', 'Pároco Fundador', 'Vigário Paroquial', 'Papa', 'Bispo', 'Administrador', 'Frei'),
     allowNull: false
   },
   startYear: {
