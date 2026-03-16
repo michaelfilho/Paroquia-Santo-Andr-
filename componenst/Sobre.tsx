@@ -12,7 +12,7 @@ export function Sobre({ litCandlesCount = 0 }: AboutProps) {
   const [stats, setStats] = useState({
     chapelsCount: '5+',
     pastoralGroups: '10+',
-    yearsHistory: '72',
+    yearsHistory: '50+',
   });
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export function Sobre({ litCandlesCount = 0 }: AboutProps) {
 
             <div className="group bg-white rounded-2xl shadow-xl p-8 border-t-4 border-amber-700 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
               <BookOpen className="w-14 h-14 text-amber-700 mb-5" />
-              <h4 className="text-4xl font-bold text-amber-900 mb-3">{stats.yearsHistory}</h4>
+              <h4 className="text-4xl font-bold text-amber-900 mb-3">50+</h4>
               <p className="text-gray-600 font-medium">Anos de História</p>
             </div>
           </div>

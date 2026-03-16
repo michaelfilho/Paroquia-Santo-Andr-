@@ -26,6 +26,10 @@ const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const uploadBaseDir = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '../../Styles/img');
+const uploadEventosDir = path.join(uploadBaseDir, 'eventos');
 
 console.log('\n🔄 ========== INICIANDO SERVIDOR ==========');
 console.log('Porta:', PORT);
@@ -65,7 +69,7 @@ app.use((req, res, next) => {
 app.use('/api/uploads', cors(corsOptions), (req, res, next) => {
   console.log(`🖼️  Tentando acessar: ${req.path}`);
   next();
-}, express.static(path.join(__dirname, '../../Styles/img'), {
+}, express.static(uploadBaseDir, {
   setHeaders: (res, filepath) => {
     console.log(`📤 Servindo arquivo: ${filepath}`);
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -367,7 +371,7 @@ app.use('/api/carousel', authMiddleware, carouselRoutes);
 app.use('/api/registration-links', authMiddleware, registrationLinksRoutes);
 
 // Serve event photos
-app.use('/api/uploads/eventos', cors(corsOptions), express.static(path.join(__dirname, '../../Styles/img/eventos'), {
+app.use('/api/uploads/eventos', cors(corsOptions), express.static(uploadEventosDir, {
   setHeaders: (res, filepath) => {
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');
     res.set('Access-Control-Allow-Origin', '*');

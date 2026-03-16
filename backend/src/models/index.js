@@ -11,7 +11,6 @@ const FormerPriest = require('./formerpriest');
 const News = require('./news');
 const CarouselItem = require('./carouselitem');
 const Schedule = require('./Schedule');
-const History = require('./history');
 const PrayerRequest = require('./PrayerRequest');
 const RegistrationLink = require('./RegistrationLink');
 
@@ -33,7 +32,6 @@ module.exports = {
   News,
   CarouselItem,
   Schedule,
-  History,
   PrayerRequest,
   RegistrationLink
 };
