@@ -304,7 +304,22 @@ const seedDefaultContent = async () => {
   }
 
   if (clergyCount === 0) {
-    await ClergyMember.bulkCreate(defaultClergy);
+    const allowedRoles = new Set(
+      (ClergyMember.rawAttributes?.role?.values || ['Pároco']).map((value) => String(value))
+    );
+
+    const clergyPayload = defaultClergy.map((member) => {
+      const fallbackRole = allowedRoles.has('Pároco')
+        ? 'Pároco'
+        : (Array.from(allowedRoles)[0] || 'Pároco');
+      const normalizedRole = allowedRoles.has(member.role) ? member.role : fallbackRole;
+      return {
+        ...member,
+        role: normalizedRole,
+      };
+    });
+
+    await ClergyMember.bulkCreate(clergyPayload);
   }
 
   if (guideCount === 0) {
