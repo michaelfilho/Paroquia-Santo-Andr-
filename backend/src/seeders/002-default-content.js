@@ -313,9 +313,13 @@ const seedDefaultContent = async () => {
         ? 'Pároco'
         : (Array.from(allowedRoles)[0] || 'Pároco');
       const normalizedRole = allowedRoles.has(member.role) ? member.role : fallbackRole;
+      const normalizedImageUrl = typeof member.imageUrl === 'string'
+        ? member.imageUrl.slice(0, 255)
+        : member.imageUrl;
       return {
         ...member,
         role: normalizedRole,
+        imageUrl: normalizedImageUrl,
       };
     });
 
