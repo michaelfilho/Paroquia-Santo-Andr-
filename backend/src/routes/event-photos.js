@@ -6,10 +6,18 @@ const { EventPhoto } = require('../models');
 
 const router = express.Router();
 
+const resolveUploadBaseDir = () => (
+  process.env.UPLOAD_DIR
+    ? path.resolve(process.env.UPLOAD_DIR)
+    : path.join(__dirname, '../../../Styles/img')
+);
+
+const resolveEventosDir = () => path.join(resolveUploadBaseDir(), 'eventos');
+
 // Configure storage for event photos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../../../Styles/img/eventos');
+    const uploadDir = resolveEventosDir();
     
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
@@ -100,7 +108,7 @@ router.delete('/:photoId', async (req, res) => {
     }
 
     // Delete file from filesystem
-    const filepath = path.join(__dirname, '../../../Styles/img/eventos', photo.filename);
+    const filepath = path.join(resolveEventosDir(), photo.filename);
     if (fs.existsSync(filepath)) {
       fs.unlinkSync(filepath);
     }
