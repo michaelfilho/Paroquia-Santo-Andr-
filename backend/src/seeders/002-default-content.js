@@ -278,6 +278,9 @@ const defaultGuides = [
 ];
 
 const seedDefaultContent = async () => {
+  const shouldSeedDemoContent =
+    process.env.SEED_DEMO_CONTENT === 'true' || process.env.NODE_ENV !== 'production';
+
   const [eventCount, chapelCount, clergyCount, guideCount, adminCount] = await Promise.all([
     Event.count(),
     Chapel.count(),
@@ -297,6 +300,12 @@ const seedDefaultContent = async () => {
     if (primaryAdmin && (!primaryAdmin.role || primaryAdmin.role !== 'superadmin')) {
       await primaryAdmin.update({ role: 'superadmin' });
     }
+  }
+
+  if (!shouldSeedDemoContent) {
+    console.log('ℹ️ Seed de conteúdo demo desativado em produção (SEED_DEMO_CONTENT != true).');
+    console.log('✅ Admin verificado com sucesso.');
+    return;
   }
 
   if (chapelCount === 0) {
