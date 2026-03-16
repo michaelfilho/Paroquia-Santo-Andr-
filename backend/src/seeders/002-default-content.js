@@ -63,7 +63,7 @@ const defaultClergy = [
 const defaultGuides = [
   {
     title: 'Guia de Casamento',
-    content: 'Informações essenciais para celebração do sacramento do matrimônio',
+    description: 'Informações essenciais para celebração do sacramento do matrimônio',
     details: [
       'Documentação necessária (certidão de nascimento, batismo)',
       'Preparação pré-matrimonial (3 encontros obrigatórios)',
@@ -77,7 +77,7 @@ const defaultGuides = [
   },
   {
     title: 'Guia de Batismo',
-    content: 'Tudo o que você precisa saber sobre o batismo e iniciação cristã',
+    description: 'Tudo o que você precisa saber sobre o batismo e iniciação cristã',
     details: [
       'Documentação da criança (certidão de nascimento)',
       'Escolha de padrinhos qualificados',
@@ -91,7 +91,7 @@ const defaultGuides = [
   },
   {
     title: 'Guia de Catequese',
-    content: 'Informações sobre os programas de catequese paroquial',
+    description: 'Informações sobre os programas de catequese paroquial',
     details: [
       'Catequese infantil (6-12 anos)',
       'Catequese de adolescentes (12-17 anos)',
@@ -105,7 +105,7 @@ const defaultGuides = [
   },
   {
     title: 'Guia de Coroinha',
-    content: 'Orientações para crianças que desejam servir no altar',
+    description: 'Orientações para crianças que desejam servir no altar',
     details: [
       'Idade mínima recomendada',
       'Treinamento e preparação litúrgica',
@@ -119,7 +119,7 @@ const defaultGuides = [
   },
   {
     title: 'Guia de Acólito',
-    content: 'Informações sobre ministério de acólito e vida litúrgica',
+    description: 'Informações sobre ministério de acólito e vida litúrgica',
     details: [
       'Formação teológica básica',
       'Preparação para os sacramentos',
@@ -133,7 +133,7 @@ const defaultGuides = [
   },
   {
     title: 'Guia de Ministro',
-    content: 'Guia para ministros leigos que servem na comunidade paroquial',
+    description: 'Guia para ministros leigos que servem na comunidade paroquial',
     details: [
       'Ministério da Eucaristia',
       'Ministério da Palavra',
