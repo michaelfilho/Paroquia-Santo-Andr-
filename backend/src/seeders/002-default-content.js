@@ -290,12 +290,12 @@ const seedDefaultContent = async () => {
     await Admin.create({
       username: 'admin',
       password: 'Igreja1010',
-      role: 'super',
+      role: 'superadmin',
     });
   } else {
     const primaryAdmin = await Admin.findOne({ where: { username: 'admin' } });
-    if (primaryAdmin && (!primaryAdmin.role || primaryAdmin.role !== 'super')) {
-      await primaryAdmin.update({ role: 'super' });
+    if (primaryAdmin && (!primaryAdmin.role || primaryAdmin.role !== 'superadmin')) {
+      await primaryAdmin.update({ role: 'superadmin' });
     }
   }
 

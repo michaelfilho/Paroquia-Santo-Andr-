@@ -39,7 +39,7 @@ const setupAdmin = async () => {
     const admin = await Admin.create({
       username: 'admin',
       password: 'admin123', // Senha em plaintext - será hasheada pelo hook
-      role: 'super',
+      role: 'superadmin',
     });
 
     console.log('\n✅ ========== SETUP CONCLUÍDO COM SUCESSO ==========');
@@ -47,7 +47,7 @@ const setupAdmin = async () => {
     console.log('   ID: ' + admin.id);
     console.log('   Usuário: admin');
     console.log('   Senha: admin123');
-    console.log('   Role: super');
+    console.log('   Role: superadmin');
     console.log('\n🔓 USE ESSAS CREDENCIAIS PARA LOGIN:');
     console.log('   Username: admin');
     console.log('   Password: admin123');

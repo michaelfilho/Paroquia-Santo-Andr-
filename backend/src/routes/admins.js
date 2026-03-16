@@ -3,17 +3,20 @@ const { Admin } = require('../models');
 
 const router = express.Router();
 
+const toClientRole = (role) => (role === 'superadmin' ? 'super' : role);
+const toDbRole = (role) => (role === 'super' ? 'superadmin' : role);
+
 const normalizeRole = (admin) => {
   if (!admin.role) {
-    return admin.username === 'admin' ? 'super' : 'admin';
+    return admin.username === 'admin' ? 'superadmin' : 'admin';
   }
-  return admin.role;
+  return toDbRole(admin.role);
 };
 
 const toSafeAdmin = (admin) => ({
   id: admin.id,
   username: admin.username,
-  role: normalizeRole(admin),
+  role: toClientRole(normalizeRole(admin)),
 });
 
 router.use(async (req, res, next) => {
@@ -37,7 +40,7 @@ router.use(async (req, res, next) => {
 });
 
 const requireSuperAdmin = (req, res, next) => {
-  if (req.currentAdmin.role !== 'super') {
+  if (normalizeRole(req.currentAdmin) !== 'superadmin') {
     return res.status(403).json({ message: 'Acesso restrito ao administrador principal' });
   }
   next();
@@ -167,10 +170,10 @@ router.put('/:id', requireSuperAdmin, async (req, res) => {
     }
 
     if (role) {
-      if (!['admin', 'super'].includes(role)) {
+      if (!['admin', 'super', 'superadmin'].includes(role)) {
         return res.status(400).json({ message: 'Role inválido' });
       }
-      updates.role = role;
+      updates.role = toDbRole(role);
     }
 
     if (Object.keys(updates).length === 0) {

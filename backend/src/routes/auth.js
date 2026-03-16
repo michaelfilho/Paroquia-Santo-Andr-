@@ -4,6 +4,8 @@ const { Admin } = require('../models');
 
 const router = express.Router();
 
+const toClientRole = (role) => (role === 'superadmin' ? 'super' : role);
+
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -24,7 +26,7 @@ router.post('/login', async (req, res) => {
     }
 
     if (!admin.role) {
-      admin.role = admin.username === 'admin' ? 'super' : 'admin';
+      admin.role = admin.username === 'admin' ? 'superadmin' : 'admin';
       await admin.save();
     }
 
@@ -50,7 +52,7 @@ router.post('/login', async (req, res) => {
       admin: {
         id: admin.id,
         username: admin.username,
-        role: admin.role,
+        role: toClientRole(admin.role),
       },
     });
   } catch (error) {
