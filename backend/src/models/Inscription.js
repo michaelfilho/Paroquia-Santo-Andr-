@@ -4,12 +4,12 @@ const Event = require('./Event');
 
 const Inscription = sequelize.define('Inscription', {
   id: {
-    type: DataTypes.UUID,
+    type: DataTypes.CHAR(36),
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
   },
   eventId: {
-    type: DataTypes.UUID,
+    type: DataTypes.CHAR(36),
     allowNull: false,
     references: {
       model: Event,
