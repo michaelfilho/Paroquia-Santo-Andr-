@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const sequelize = require('./config/sequelize');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
@@ -377,6 +378,20 @@ app.use('/api/uploads/eventos', cors(corsOptions), express.static(uploadEventosD
     res.set('Access-Control-Allow-Origin', '*');
   }
 }));
+
+// Serve frontend build (single-service deploy mode)
+const frontendDistDir = path.join(__dirname, '../../dist');
+const frontendIndexPath = path.join(frontendDistDir, 'index.html');
+const hasFrontendBuild = fs.existsSync(frontendIndexPath);
+
+if (hasFrontendBuild) {
+  app.use(express.static(frontendDistDir));
+
+  // SPA fallback for non-API routes
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(frontendIndexPath);
+  });
+}
 
 // Error handling
 app.use((err, req, res, next) => {
