@@ -89,14 +89,19 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Título e data são obrigatórios' });
         }
 
+        // Validar formato de data
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+            return res.status(400).json({ message: 'Data deve estar no formato YYYY-MM-DD' });
+        }
+
         const schedule = await Schedule.create({
             title,
             date,
-            timeStart,
-            timeEnd,
-            location,
-            description,
-            category,
+            timeStart: timeStart ? String(timeStart).trim() : null,
+            timeEnd: timeEnd ? String(timeEnd).trim() : null,
+            location: location ? String(location).trim() : null,
+            description: description ? String(description).trim() : null,
+            category: category ? String(category).trim() : null,
             isPublished: isPublished !== undefined ? isPublished : false,
         });
 
@@ -105,7 +110,11 @@ router.post('/', async (req, res) => {
             schedule,
         });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao criar programação', error: error.message });
+        console.error('Erro ao criar programação:', error);
+        res.status(500).json({ 
+            message: 'Erro ao criar programação: ' + (error.message || 'Erro desconhecido'),
+            details: error.errors ? error.errors.map(e => e.message) : error.message
+        });
     }
 });
 
@@ -117,13 +126,32 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Programação não encontrada' });
         }
 
-        await schedule.update(req.body);
+        // Validar data se informada
+        if (req.body.date && !/^\d{4}-\d{2}-\d{2}$/.test(String(req.body.date))) {
+            return res.status(400).json({ message: 'Data deve estar no formato YYYY-MM-DD' });
+        }
+
+        // Limpar strings de espaços em branco
+        const updateData = {};
+        for (const key in req.body) {
+            if (typeof req.body[key] === 'string') {
+                updateData[key] = req.body[key].trim();
+            } else {
+                updateData[key] = req.body[key];
+            }
+        }
+
+        await schedule.update(updateData);
         res.json({
             message: 'Programação atualizada com sucesso',
             schedule,
         });
     } catch (error) {
-        res.status(500).json({ message: 'Erro ao atualizar programação', error: error.message });
+        console.error('Erro ao atualizar programação:', error);
+        res.status(500).json({ 
+            message: 'Erro ao atualizar programação: ' + (error.message || 'Erro desconhecido'),
+            details: error.errors ? error.errors.map(e => e.message) : error.message
+        });
     }
 });
 
