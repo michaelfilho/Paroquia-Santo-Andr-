@@ -129,7 +129,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                                 Nossas portas estão sempre abertas. Entre em contato com a secretaria paroquial para mais informações sobre como integrar um de nossos grupos e ajudar na evangelização.
                             </p>
                             <button
-                                onClick={() => window.open('https://api.whatsapp.com/send?phone=+55(18)99799-4927&text=Gostaria%20de%20saber%20mais%20sobre%20as%20pastorais', '_blank')}
+                                onClick={() => window.open('https://api.whatsapp.com/send?phone=5518997994927&text=Gostaria%20de%20saber%20mais%20sobre%20as%20pastorais', '_blank')}
                                 className="bg-white text-amber-950 px-10 py-5 rounded-full font-bold text-lg hover:bg-amber-50 hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl inline-flex items-center space-x-3"
                             >
                                 <MessageCircle className="w-6 h-6" />
