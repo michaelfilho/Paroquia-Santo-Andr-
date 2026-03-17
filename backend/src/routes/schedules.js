@@ -28,6 +28,45 @@ router.get('/public', async (req, res) => {
     }
 });
 
+// DELETE ALL schedules (Admin endpoint for cleanup) - MUST be before /:id route
+router.delete('/clear/all-schedules', async (req, res) => {
+    try {
+        const secret = req.headers['x-admin-secret'] || req.query.secret;
+        const expectedSecret = process.env.ADMIN_SECRET || 'Igreja1010';
+        
+        if (secret !== expectedSecret) {
+            return res.status(401).json({ message: 'Não autorizado. Secret inválida.' });
+        }
+
+        const beforeCount = await Schedule.count();
+        
+        if (beforeCount === 0) {
+            return res.json({ 
+                message: 'Nenhuma programação para deletar',
+                deletedCount: 0,
+                beforeCount: 0
+            });
+        }
+
+        await Schedule.destroy({
+            where: {},
+            truncate: true,
+            force: true,
+        });
+
+        const afterCount = await Schedule.count();
+        
+        res.json({ 
+            message: 'Todas as programações foram deletadas com sucesso',
+            deletedCount: beforeCount,
+            beforeCount: beforeCount,
+            afterCount: afterCount
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao deletar todas as programações', error: error.message });
+    }
+});
+
 // GET schedule by ID
 router.get('/:id', async (req, res) => {
     try {
@@ -189,45 +228,6 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: 'Programação deletada com sucesso' });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao deletar programação', error: error.message });
-    }
-});
-
-// DELETE ALL schedules (Admin endpoint for cleanup)
-router.delete('/clear/all-schedules', async (req, res) => {
-    try {
-        const secret = req.headers['x-admin-secret'] || req.query.secret;
-        const expectedSecret = process.env.ADMIN_SECRET || 'Igreja1010';
-        
-        if (secret !== expectedSecret) {
-            return res.status(401).json({ message: 'Não autorizado. Secret inválida.' });
-        }
-
-        const beforeCount = await Schedule.count();
-        
-        if (beforeCount === 0) {
-            return res.json({ 
-                message: 'Nenhuma programação para deletar',
-                deletedCount: 0,
-                beforeCount: 0
-            });
-        }
-
-        await Schedule.destroy({
-            where: {},
-            truncate: true,
-            force: true,
-        });
-
-        const afterCount = await Schedule.count();
-        
-        res.json({ 
-            message: 'Todas as programações foram deletadas com sucesso',
-            deletedCount: beforeCount,
-            beforeCount: beforeCount,
-            afterCount: afterCount
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Erro ao deletar todas as programações', error: error.message });
     }
 });
 
