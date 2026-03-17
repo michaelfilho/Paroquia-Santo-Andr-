@@ -144,16 +144,6 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
                                 className="absolute inset-0"
                             />
                         </div>
-                        
-                        <div className="p-6 bg-amber-50 flex items-center justify-center">
-                            <button
-                                onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${paroquiaInfo.coordenadas.lat},${paroquiaInfo.coordenadas.lng}`, '_blank')}
-                                className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-8 py-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all duration-300 inline-flex items-center space-x-2"
-                            >
-                                <MapPin className="w-5 h-5" />
-                                <span>Abrir no Google Maps</span>
-                            </button>
-                        </div>
                     </div>
                 </div>
             </main>
