@@ -95,10 +95,10 @@ router.post('/', async (req, res) => {
         }
 
         const schedule = await Schedule.create({
-            title,
+            title: String(title).trim(),
             date,
-            timeStart: timeStart ? String(timeStart).trim() : null,
-            timeEnd: timeEnd ? String(timeEnd).trim() : null,
+            timeStart: timeStart ? String(timeStart).trim().slice(0, 50) : null,
+            timeEnd: timeEnd ? String(timeEnd).trim().slice(0, 50) : null,
             location: location ? String(location).trim() : null,
             description: description ? String(description).trim() : null,
             category: category ? String(category).trim() : null,
@@ -131,10 +131,13 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ message: 'Data deve estar no formato YYYY-MM-DD' });
         }
 
-        // Limpar strings de espaços em branco
+        // Limpar e truncar strings
         const updateData = {};
         for (const key in req.body) {
-            if (typeof req.body[key] === 'string') {
+            if (key === 'timeStart' || key === 'timeEnd') {
+                // Truncar campos de tempo para 50 caracteres
+                updateData[key] = req.body[key] ? String(req.body[key]).trim().slice(0, 50) : req.body[key];
+            } else if (typeof req.body[key] === 'string') {
                 updateData[key] = req.body[key].trim();
             } else {
                 updateData[key] = req.body[key];

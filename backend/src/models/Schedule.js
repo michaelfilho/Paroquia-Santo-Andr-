@@ -16,11 +16,11 @@ const Schedule = sequelize.define('Schedule', {
         allowNull: false
     },
     timeStart: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(50),
         field: 'time_start'
     },
     timeEnd: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(50),
         field: 'time_end'
     },
     location: {
