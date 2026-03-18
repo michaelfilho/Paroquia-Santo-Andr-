@@ -1,24 +1,45 @@
 const express = require('express');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 const upload = require('../config/upload');
+const { UploadedFile } = require('../models');
+
+const toSafeFolder = (folder) => {
+  const normalized = String(folder || 'geral').trim().replace(/[^a-zA-Z0-9_-]/g, '');
+  return normalized || 'geral';
+};
+
+const buildStoredName = (originalname) => {
+  const ext = path.extname(originalname || '').toLowerCase();
+  return `${uuidv4()}${ext}`;
+};
 
 // POST - Upload de imagem dinâmico em /api/upload/:folder
-router.post('/:folder', upload.single('image'), (req, res) => {
+router.post('/:folder', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Nenhuma imagem foi enviada' });
     }
 
-    console.log('📸 Upload recebido na pasta:', req.params.folder);
+    const folder = toSafeFolder(req.params.folder);
+    const storedName = buildStoredName(req.file.originalname);
 
-    // Salvar o caminho como /api/uploads/NOME_PASTA/arquivo.jpg
-    const filePath = `/api/uploads/${req.params.folder}/${req.file.filename}`;
+    await UploadedFile.create({
+      folder,
+      storedName,
+      originalName: req.file.originalname || storedName,
+      mimeType: req.file.mimetype || 'application/octet-stream',
+      sizeBytes: Number(req.file.size || 0),
+      data: req.file.buffer,
+    });
 
+    const filePath = `/api/uploads/${folder}/${storedName}`;
     res.status(201).json({
       success: true,
       url: filePath,
-      imageUrl: filePath, // Para retrocompatibilidade de logs frontend
-      filename: req.file.filename,
+      imageUrl: filePath,
+      filename: storedName,
     });
   } catch (error) {
     console.error('❌ Erro no upload:', error);
@@ -27,7 +48,7 @@ router.post('/:folder', upload.single('image'), (req, res) => {
 });
 
 // Suportar rota padrão raiz
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   req.params.folder = 'geral';
 
   try {
@@ -35,16 +56,27 @@ router.post('/', upload.single('image'), (req, res) => {
       return res.status(400).json({ message: 'Nenhuma imagem foi enviada' });
     }
 
-    const filePath = `/api/uploads/geral/${req.file.filename}`;
+    const folder = 'geral';
+    const storedName = buildStoredName(req.file.originalname);
 
+    await UploadedFile.create({
+      folder,
+      storedName,
+      originalName: req.file.originalname || storedName,
+      mimeType: req.file.mimetype || 'application/octet-stream',
+      sizeBytes: Number(req.file.size || 0),
+      data: req.file.buffer,
+    });
+
+    const filePath = `/api/uploads/geral/${storedName}`;
     res.status(201).json({
       success: true,
       url: filePath,
       imageUrl: filePath,
-      filename: req.file.filename,
+      filename: storedName,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao fazer upload da imagem' });
+    res.status(500).json({ message: 'Erro ao fazer upload da imagem', error: error.message });
   }
 });
 

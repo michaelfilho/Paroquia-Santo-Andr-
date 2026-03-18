@@ -1,36 +1,12 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const { EventPhoto } = require('../models');
+const { v4: uuidv4 } = require('uuid');
+const { EventPhoto, UploadedFile } = require('../models');
 
 const router = express.Router();
 
-const resolveUploadBaseDir = () => (
-  process.env.UPLOAD_DIR
-    ? path.resolve(process.env.UPLOAD_DIR)
-    : path.join(__dirname, '../../../Styles/img')
-);
-
-const resolveEventosDir = () => path.join(resolveUploadBaseDir(), 'eventos');
-
-// Configure storage for event photos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = resolveEventosDir();
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'event-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -63,10 +39,23 @@ router.post('/event/:eventId', upload.array('photos', 20), async (req, res) => {
     const savedPhotos = [];
 
     for (const file of files) {
+      const storedName = `event-${uuidv4()}${path.extname(file.originalname || '').toLowerCase()}`;
+
+      await UploadedFile.create({
+        folder: 'eventos',
+        storedName,
+        originalName: file.originalname || storedName,
+        mimeType: file.mimetype || 'application/octet-stream',
+        sizeBytes: Number(file.size || 0),
+        data: file.buffer,
+      });
+
+      const imagePath = `/api/uploads/eventos/${storedName}`;
       const photo = await EventPhoto.create({
         eventId: eventId,
-        filename: file.filename,
-        path: `/api/uploads/eventos/${file.filename}`
+        filename: storedName,
+        path: imagePath,
+        imageUrl: imagePath,
       });
       savedPhotos.push(photo);
     }
@@ -107,10 +96,13 @@ router.delete('/:photoId', async (req, res) => {
       return res.status(404).json({ message: 'Foto não encontrada' });
     }
 
-    // Delete file from filesystem
-    const filepath = path.join(resolveEventosDir(), photo.filename);
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
+    if (photo.filename) {
+      await UploadedFile.destroy({
+        where: {
+          folder: 'eventos',
+          storedName: photo.filename,
+        },
+      });
     }
 
     // Delete from database

@@ -13,6 +13,7 @@ const CarouselItem = require('./carouselitem');
 const Schedule = require('./Schedule');
 const PrayerRequest = require('./PrayerRequest');
 const RegistrationLink = require('./RegistrationLink');
+const UploadedFile = require('./UploadedFile');
 
 // Define relationships
 Event.hasMany(EventPhoto, { foreignKey: 'eventId', as: 'photos' });
@@ -33,5 +34,6 @@ module.exports = {
   CarouselItem,
   Schedule,
   PrayerRequest,
-  RegistrationLink
+  RegistrationLink,
+  UploadedFile
 };

@@ -70,7 +70,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                             Movimentos e Pastorais
                         </h1>
                         <div className="w-24 h-1.5 bg-gradient-to-r from-amber-500 to-amber-700 mx-auto rounded-full mb-8 shadow-sm" />
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-justify">
                             A Paróquia Santo André é construída por muitas mãos. Conheça as forças vivas de nossa comunidade e encontre seu lugar para servir a Deus e aos irmãos.
                         </p>
                     </div>
@@ -95,7 +95,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
                                     </div>
 
                                     <h3 className="relative z-10 text-2xl font-bold text-gray-900 mb-4 group-hover:text-amber-800 transition-colors">{mov.name}</h3>
-                                    <p className="relative z-10 text-gray-600 leading-relaxed mb-8 flex-grow">
+                                    <p className="relative z-10 text-gray-600 leading-relaxed mb-8 flex-grow text-justify">
                                         {mov.description}
                                     </p>
 
@@ -125,7 +125,7 @@ export function Movimentos({ onNavigate, currentPage, onAdminClick }: Props) {
 
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Deseja participar?</h2>
-                            <p className="text-amber-100/90 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+                            <p className="text-amber-100/90 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light text-justify">
                                 Nossas portas estão sempre abertas. Entre em contato com a secretaria paroquial para mais informações sobre como integrar um de nossos grupos e ajudar na evangelização.
                             </p>
                             <button

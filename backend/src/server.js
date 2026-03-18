@@ -24,6 +24,7 @@ const liturgyRoutes = require('./routes/liturgy');
 const authMiddleware = require('./middleware/auth');
 const { seedDefaultContent } = require('./seeders/002-default-content');
 const { autoArchiveExpiredEvents } = require('./utils/event-auto-archive');
+const { UploadedFile } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -67,6 +68,29 @@ app.use((req, res, next) => {
 });
 
 // Servir arquivos estáticos (imagens) com CORS habilitado
+app.get('/api/uploads/:folder/:storedName', cors(corsOptions), async (req, res, next) => {
+  try {
+    const folder = String(req.params.folder || '').trim();
+    const storedName = String(req.params.storedName || '').trim();
+
+    if (!folder || !storedName) return next();
+
+    const dbFile = await UploadedFile.findOne({ where: { folder, storedName } });
+    if (!dbFile || !dbFile.data) return next();
+
+    const buffer = Buffer.isBuffer(dbFile.data) ? dbFile.data : Buffer.from(dbFile.data);
+    res.set('Content-Type', dbFile.mimeType || 'application/octet-stream');
+    res.set('Content-Length', String(dbFile.sizeBytes || buffer.length));
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Access-Control-Allow-Origin', '*');
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Erro ao servir upload do banco:', error);
+    return next();
+  }
+});
+
 app.use('/api/uploads', cors(corsOptions), (req, res, next) => {
   console.log(`🖼️  Tentando acessar: ${req.path}`);
   next();

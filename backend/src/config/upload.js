@@ -1,35 +1,24 @@
 const multer = require('multer');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
 
-const resolveUploadBaseDir = () => (
-    process.env.UPLOAD_DIR
-        ? path.resolve(process.env.UPLOAD_DIR)
-        : path.join(__dirname, '../../../Styles/img')
-);
+const storage = multer.memoryStorage();
 
-const toSafeFolder = (folder) => {
-    const normalized = String(folder || 'geral').trim().replace(/[^a-zA-Z0-9_-]/g, '');
-    return normalized || 'geral';
-};
+const upload = multer({
+    storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|gif|webp|svg\+xml/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test((file.mimetype || '').toLowerCase());
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const folder = toSafeFolder(req.params.folder);
-        const uploadDir = path.join(resolveUploadBaseDir(), folder);
-
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        if (mimetype && extname) {
+            return cb(null, true);
         }
 
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const ext = path.extname(file.originalname);
-        cb(null, uuidv4() + ext);
+        cb(new Error('Apenas imagens são permitidas!'));
     }
 });
 
-const upload = multer({ storage });
 module.exports = upload;
