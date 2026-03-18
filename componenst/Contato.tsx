@@ -21,8 +21,7 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
         email: 'parsant@hotmail.com',
         whatsapp: '+5518997994927',
         horarioFuncionamento: [
-            'Segunda a Sexta: 8h às 11:30h',
-            'Segunda a Sexta: 13h às 17h',
+            'Segunda a Sexta: 8h às 11:30h, 13h às 17h ',
             'Sábado: 8h às 11:30h',
         ],
         coordenadas: {
