@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpenText } from 'lucide-react';
 import type { DailyLiturgy, LiturgicalTheme } from '../src/services/liturgia';
 
@@ -81,7 +81,14 @@ const cleanupGospelHtml = (html: string) => {
 };
 
 export function LiturgiaDiariaCard({ liturgy, isLoading, error, theme }: DailyLiturgyProps) {
-  const [activeTab, setActiveTab] = useState<'first' | 'psalm' | 'gospel'>('first');
+  const [activeTab, setActiveTab] = useState<'first' | 'second' | 'psalm' | 'gospel'>('first');
+  const hasSecondReading = Boolean(liturgy?.readings.second?.text);
+
+  useEffect(() => {
+    if (activeTab === 'second' && !hasSecondReading) {
+      setActiveTab('first');
+    }
+  }, [activeTab, hasSecondReading]);
 
   const tabData = useMemo(() => {
     if (!liturgy) return null;
@@ -105,6 +112,17 @@ export function LiturgiaDiariaCard({ liturgy, isLoading, error, theme }: DailyLi
         subline: liturgy.readings.psalm.refrain || '',
         text: liturgy.readings.psalm.text,
         html: liturgy.readings.psalm.html || '',
+      };
+    }
+
+    if (activeTab === 'second') {
+      return {
+        tabTitle: '2a Leitura',
+        title: liturgy.readings.second?.title || '2a Leitura',
+        reference: liturgy.readings.second?.reference || '',
+        subline: '',
+        text: liturgy.readings.second?.text || '',
+        html: liturgy.readings.second?.html || '',
       };
     }
 
@@ -165,7 +183,10 @@ export function LiturgiaDiariaCard({ liturgy, isLoading, error, theme }: DailyLi
                 {liturgy.liturgyTitle}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 border rounded-lg overflow-hidden mb-6" style={{ borderColor: theme.soft }}>
+              <div
+                className={`grid grid-cols-1 ${hasSecondReading ? 'md:grid-cols-4' : 'md:grid-cols-3'} border rounded-lg overflow-hidden mb-6`}
+                style={{ borderColor: theme.soft }}
+              >
                 <button
                   onClick={() => setActiveTab('first')}
                   className="px-4 py-3 text-base font-semibold border-b md:border-b-0 md:border-r transition-colors"
@@ -177,6 +198,20 @@ export function LiturgiaDiariaCard({ liturgy, isLoading, error, theme }: DailyLi
                 >
                   1a Leitura
                 </button>
+
+                {hasSecondReading && (
+                  <button
+                    onClick={() => setActiveTab('second')}
+                    className="px-4 py-3 text-base font-semibold border-b md:border-b-0 md:border-r transition-colors"
+                    style={{
+                      borderColor: theme.soft,
+                      backgroundColor: activeTab === 'second' ? theme.main : 'transparent',
+                      color: activeTab === 'second' ? '#ffffff' : '#6b7280',
+                    }}
+                  >
+                    2a Leitura
+                  </button>
+                )}
 
                 <button
                   onClick={() => setActiveTab('psalm')}

@@ -244,8 +244,8 @@ const defaultMapMainCard = {
   imageUrl: '',
   title: 'Paróquia Santo André',
   badge: 'Centro',
-  address: 'R. das Violetas, 257, Tarumã - SP',
-  googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000',
+  address: 'R. das Violetas, 126, Tarumã - SP',
+  googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Paróquia+Santo+André,+R.+das+Violetas,+126,+Tarumã+-+SP,+19820-000',
   routeLabel: 'Ver rota no Google Maps',
 };
 

@@ -14,6 +14,12 @@ export interface DailyLiturgy {
       text: string;
       html?: string;
     };
+    second?: {
+      title: string;
+      reference: string;
+      text: string;
+      html?: string;
+    };
     psalm: {
       title: string;
       reference: string;
@@ -45,10 +51,12 @@ interface RawLiturgy {
   cor?: string;
   leituras?: {
     primeiraLeitura?: RawReading[];
+    segundaLeitura?: RawReading[];
     salmo?: RawReading[];
     evangelho?: RawReading[];
   };
   primeiraLeitura?: RawReading;
+  segundaLeitura?: RawReading;
   salmo?: RawReading;
   evangelho?: RawReading;
 }
@@ -140,8 +148,10 @@ export const fetchDailyLiturgy = async (): Promise<DailyLiturgy> => {
 
   const payload: RawLiturgy = await response.json();
   const primeiraLeitura = getReading(payload.leituras?.primeiraLeitura, payload.primeiraLeitura);
+  const segundaLeitura = getReading(payload.leituras?.segundaLeitura, payload.segundaLeitura);
   const salmo = getReading(payload.leituras?.salmo, payload.salmo);
   const evangelho = getReading(payload.leituras?.evangelho, payload.evangelho);
+  const hasSecondReading = Boolean(cleanSpaces(segundaLeitura?.texto || ''));
 
   return {
     date: payload.data || new Date().toLocaleDateString('pt-BR'),
@@ -157,6 +167,12 @@ export const fetchDailyLiturgy = async (): Promise<DailyLiturgy> => {
         text: cleanSpaces(primeiraLeitura?.texto || 'Leitura indisponivel para hoje.'),
         html: primeiraLeitura?.html || '',
       },
+      second: hasSecondReading ? {
+        title: cleanSpaces(segundaLeitura?.titulo || 'Segunda Leitura'),
+        reference: cleanSpaces(segundaLeitura?.referencia || ''),
+        text: cleanSpaces(segundaLeitura?.texto || ''),
+        html: segundaLeitura?.html || '',
+      } : undefined,
       psalm: {
         title: 'Salmo',
         reference: cleanSpaces(salmo?.referencia || ''),

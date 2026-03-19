@@ -133,14 +133,14 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
                         
                         <div className="aspect-video md:aspect-[21/9] w-full bg-gray-100 relative">
                             <iframe
-                                src="https://www.google.com/maps?q=Paróquia+Santo+André,+R.+das+Violetas,+257,+Tarumã+-+SP,+19820-000&hl=pt-BR&z=17&output=embed"
+                                src="https://www.google.com/maps?q=Paróquia+Santo+André,+R.+das+Violetas,+126,+Tarumã+-+SP,+19820-000&hl=pt-BR&z=17&output=embed"
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
                                 allowFullScreen
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                title="Localização da Paróquia Santo André - R. das Violetas, 257, Tarumã - SP"
+                                title="Localização da Paróquia Santo André - R. das Violetas, 126, Tarumã - SP"
                                 className="absolute inset-0"
                             />
                         </div>

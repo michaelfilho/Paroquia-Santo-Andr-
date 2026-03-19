@@ -178,18 +178,24 @@ const fetchCancaonovaLiturgy = async () => {
 
     const firstMeta = extractTabMeta(html, 'liturgia-1');
     const psalmMeta = extractTabMeta(html, 'liturgia-2');
+    const secondMeta = extractTabMeta(html, 'liturgia-3');
     const gospelMeta = extractTabMeta(html, 'liturgia-4');
 
     const firstSectionHtml = extractSectionHtml(html, 'liturgia-1');
     const psalmSectionHtml = extractSectionHtml(html, 'liturgia-2');
+    const secondSectionHtml = extractSectionHtml(html, 'liturgia-3');
     const gospelSectionHtml = extractSectionHtml(html, 'liturgia-4');
 
     const firstText = stripHtmlToText(firstSectionHtml);
     const psalmText = stripHtmlToText(psalmSectionHtml);
+    const secondText = stripHtmlToText(secondSectionHtml);
     const gospelText = stripHtmlToText(gospelSectionHtml);
     const firstHtml = sanitizeReadingHtml(firstSectionHtml);
     const psalmHtml = sanitizeReadingHtml(psalmSectionHtml);
+    const secondHtml = sanitizeReadingHtml(secondSectionHtml);
     const gospelHtml = sanitizeReadingHtml(gospelSectionHtml);
+
+    const hasSecondReading = Boolean(secondText);
 
     if (!liturgyTitle || !firstText || !gospelText) {
       throw new Error('Nao foi possivel interpretar a liturgia da Canção Nova.');
@@ -207,6 +213,12 @@ const fetchCancaonovaLiturgy = async () => {
           texto: firstText,
           html: firstHtml,
         }],
+        segundaLeitura: hasSecondReading ? [{
+          titulo: secondMeta.title || '2a Leitura',
+          referencia: secondMeta.reference,
+          texto: secondText,
+          html: secondHtml,
+        }] : [],
         salmo: [{
           titulo: psalmMeta.title || 'Salmo',
           referencia: psalmMeta.reference,

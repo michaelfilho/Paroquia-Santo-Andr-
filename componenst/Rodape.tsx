@@ -6,11 +6,13 @@ interface FooterProps {
   onAdminClick?: () => void;
 }
 
+const normalizeAddressLine = (line: string) => line.replace('Rua das Violetas, 257', 'Rua das Violetas, 126');
+
 export function Rodape({ onAdminClick }: FooterProps) {
   const [config, setConfig] = useState({
     parishName: 'Paróquia Santo André',
     cityState: 'Tarumã - SP',
-    aboutText: 'Uma comunidade de fé, esperança e amor servindo Tarumã desde 1952.',
+    aboutText: 'Uma comunidade de fé, esperança e amor servindo Tarumã.',
     phone: '(18) 99799-4927',
     phoneLink: '18997994927',
     email: 'parsant@hotmail.com',
@@ -28,7 +30,15 @@ export function Rodape({ onAdminClick }: FooterProps) {
         const data = await contentAPI.getByKey('footer_config');
         if (data?.content) {
           const parsed = JSON.parse(data.content);
-          setConfig((prev) => ({ ...prev, ...parsed }));
+          const normalizedAddressLines = Array.isArray(parsed?.addressLines)
+            ? parsed.addressLines.map((line: string) => normalizeAddressLine(String(line)))
+            : undefined;
+
+          setConfig((prev) => ({
+            ...prev,
+            ...parsed,
+            ...(normalizedAddressLines ? { addressLines: normalizedAddressLines } : {}),
+          }));
         }
       } catch (error) {
         console.error('Erro ao carregar configuração do rodapé:', error);
