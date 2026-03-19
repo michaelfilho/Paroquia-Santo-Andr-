@@ -14,15 +14,15 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
 
     const paroquiaInfo = {
         nome: 'Paróquia Santo André',
-        endereco: 'Rua das Violetas, 257',
+        endereco: 'Rua das Violetas, 126',
         cidade: 'Tarumã - SP',
         cep: 'CEP: 19820035',
         telefone: '(18) 99799-4927',
         email: 'parsant@hotmail.com',
         whatsapp: '+5518997994927',
         horarioFuncionamento: [
-            'Segunda a Sexta: 8h às 11:30h, 13h às 17h ',
-            'Sábado: 8h às 11:30h',
+            'Segunda a Sexta: 08h às 11h30, 13h às 17h ',
+            'Sábado: 8h às 11h30',
         ],
         coordenadas: {
             lat: -22.7451872,

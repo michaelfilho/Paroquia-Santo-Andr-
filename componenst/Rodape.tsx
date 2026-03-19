@@ -14,7 +14,7 @@ export function Rodape({ onAdminClick }: FooterProps) {
     phone: '(18) 99799-4927',
     phoneLink: '18997994927',
     email: 'parsant@hotmail.com',
-    addressLines: ['Rua das Violetas, 257', 'Centro - Tarumã/SP', 'CEP: 19820035'],
+    addressLines: ['Rua das Violetas, 126', 'Centro - Tarumã/SP', 'CEP: 19820035'],
     instagramUrl: 'https://www.instagram.com/paroquiasantoandre.taruma/',
     facebookUrl: 'https://www.facebook.com/paroquiasantoandretaruma',
     copyrightText: '© 2026 Paróquia Santo André. Todos os direitos reservados.',
