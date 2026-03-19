@@ -22,7 +22,7 @@ export function Contato({ onNavigate, currentPage, onAdminClick }: Props) {
         whatsapp: '+5518997994927',
         horarioFuncionamento: [
             'Segunda a Sexta: 08h às 11h30, 13h às 17h ',
-            'Sábado: 8h às 11h30',
+            'Sábado: 08h às 11h30',
         ],
         coordenadas: {
             lat: -22.7451872,
